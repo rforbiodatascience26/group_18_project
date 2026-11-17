@@ -9,28 +9,28 @@ editor: visual
 ```{r}
 library("tidyverse")
 library("here")
+library("readxl")
 ```
 
 ## Download all data
 
 ```{r}
+# recursive = TRUE creates data and _raw if directories don't exist
 dir.create(here("data", "_raw"), recursive = TRUE, showWarnings = FALSE)
 
 ```
 
 ```{r}
-options(timeout = max(300, getOption("timeout")))
-
-
 urls <- c("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE141nnn/GSE141549/suppl/GSE141549%5FIllumina%5FHumanHT%2D12%5FV4%2E0%5Fexpression%5Fbeadchip%5Fnormalized%2Exlsx",
-          
+
           "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE141nnn/GSE141549/suppl/GSE141549%5FIllumina%5FHumanWG%2D6%5Fv2%2E0%5Fexpression%5Fbeadchip%5Fnormalized%2Exlsx",
-          
+
           "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE141nnn/GSE141549/suppl/GSE141549%5FNon%2Dnormalized%5Fdata%5FGA%5Fillumina%5Fexpression%5FHumanWG%2D6%2Exls%2Egz",
-          
+
           "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE141nnn/GSE141549/suppl/GSE141549%5FNon%2Dnormalized%5Fdata%5FGA%5Fillumina%5Fexpression%5Fplatform%5FHumanHT%2D12%2Exls%2Egz",
           "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE141nnn/GSE141549/suppl/GSE141549%5FSample%5Flink%2Exlsx",
           "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE141nnn/GSE141549/suppl/GSE141549%5FbatchCorrectednormalizedArrayscombined%2Exlsx")
+
 
 destfiles <- c("data/_raw/illum_HT.gz",
                "data/_raw/illum_WG.gz",
@@ -43,6 +43,30 @@ download.file(url = urls,
               destfile = here(destfiles),
               method = "libcurl",
               mode = "wb")
+```
 
+Manual check of files
 
+```{r}
+illum_HT_load <- read_excel(here("data/_raw/illum_HT.gz"))
+head(illum_HT_load)
+write_tsv(illum_HT_load,
+          "../data/01_illum_HT_load.tsv")
+```
+
+```{r}
+batchCN_array_combined <- read_excel(here("data/_raw/batchCN_array_combined.gz"))
+head(batchCN_array_combined)
+write_tsv(batchCN_array_combined,
+          "../data/01_batchCN_array_combined_load.tsv")
+```
+
+```{r}
+Sample_link <- read_excel(here("data/_raw/Sample_link.gz"))
+head(Sample_link)
+write_tsv(Sample_link,
+          "../data/01_Sample_link_load.tsv")
+```
+
+```{}
 ```
