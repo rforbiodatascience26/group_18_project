@@ -14,8 +14,7 @@ library("here")
 ## Download all data
 
 ```{r}
-dir.create(path = here("data"))
-dir.create(path = here("data/_raw"))
+dir.create(here("data", "_raw"), recursive = TRUE, showWarnings = FALSE)
 
 ```
 
