@@ -48,13 +48,6 @@ download.file(url = urls,
 Manual check of files
 
 ```{r}
-illum_HT_load <- read_excel(here("data/_raw/illum_HT.gz"))
-head(illum_HT_load)
-write_tsv(illum_HT_load,
-          "../data/01_illum_HT_load.tsv")
-```
-
-```{r}
 batchCN_array_combined <- read_excel(here("data/_raw/batchCN_array_combined.gz"))
 head(batchCN_array_combined)
 write_tsv(batchCN_array_combined,
@@ -66,7 +59,4 @@ Sample_link <- read_excel(here("data/_raw/Sample_link.gz"))
 head(Sample_link)
 write_tsv(Sample_link,
           "../data/01_Sample_link_load.tsv")
-```
-
-```{}
 ```
