@@ -1,0 +1,10 @@
+---
+title: "04_describe"
+format: html
+editor: visual
+---
+
+## Intention
+
+inputfile: 02_dat_clean.tsv\
+outputfile: 03_dat_aug.tsv
