@@ -1,27 +1,51 @@
 ---
+g---
 title: "02_clean"
 format: html
 editor: visual
 ---
 
-## Intention
+## intention
 
 input: raw datafile\
 output file: 01_dat_load.tsv
 
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+libraries:
 
 ```{r}
-1 + 1
+library("tidyverse")
+
 ```
 
-You can add options to executable code like this
+get loaded file
 
 ```{r}
-#| echo: false
-2 * 2
+data<-source("01_load.qmd")
+view(data)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+Make every gene a column and the sample a row
+
+```{r}
+data_wrangled <- data |> select("ILMN_gene", starts_with("SAMPLE"))
+  pivot_longer(
+    cols = starts_with("SAMPLE"),
+    names_to = "sample",
+    values_to = "expression")
+  pivot_wider(
+    names_from = "ILMN_gene",
+    values_from = "expression"
+  )
+    
+```
+
+sort patient after tissue type which is mentioned after the sample. we want to thereby we use regex to get the patient_id and tissue_types which duplicates
+
+```{r}
+data_tissue <- data_wrangled |> 
+  mutate(
+    patient_id = str_extract(sample, "\\d+")
+    tissue_type = str_remove("^SAMPLE\\s+\\d+\\s+) |> 
+  )
+
+```
