@@ -7,4 +7,4 @@ editor: visual
 ## Intention
 
 inputfile: 02_dat_clean.tsv\
-outputfile: 03_dat_aug.tsv
+outputfile: 03_dat_aug.tsv, 04_key_plot_1.png

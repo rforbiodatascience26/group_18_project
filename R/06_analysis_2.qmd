@@ -1,0 +1,10 @@
+---
+title: "06_analysis_2"
+format: html
+editor: visual
+---
+
+## Intention
+
+inputfile: 02_dat_clean.tsv\
+outputfile: 06_key_plot_3.png
