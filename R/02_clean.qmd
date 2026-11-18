@@ -7,45 +7,37 @@ editor: visual
 
 ## intention
 
-input: raw datafile\
+input: datafile loaded\
 output file: 01_dat_load.tsv
 
 libraries:
 
 ```{r}
 library("tidyverse")
-
+library("readr")
+library("here")
 ```
 
 get loaded file
 
 ```{r}
-data<-source("01_load.qmd")
-view(data)
+
+batchCN_array_combined <- read_tsv(here("data/01_batchCN_array_combined_load.tsv"))
+
+```
+
+```{r}
+head(batchCN_array_combined)
 ```
 
 Make every gene a column and the sample a row
 
 ```{r}
-data_wrangled <- data |> select("ILMN_gene", starts_with("SAMPLE"))
-  pivot_longer(
-    cols = starts_with("SAMPLE"),
-    names_to = "sample",
-    values_to = "expression")
-  pivot_wider(
-    names_from = "ILMN_gene",
-    values_from = "expression"
-  )
-    
+
 ```
 
 sort patient after tissue type which is mentioned after the sample. we want to thereby we use regex to get the patient_id and tissue_types which duplicates
 
 ```{r}
-data_tissue <- data_wrangled |> 
-  mutate(
-    patient_id = str_extract(sample, "\\d+")
-    tissue_type = str_remove("^SAMPLE\\s+\\d+\\s+) |> 
-  )
 
 ```

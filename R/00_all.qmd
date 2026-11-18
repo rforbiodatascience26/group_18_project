@@ -1,0 +1,8 @@
+---
+title: "00_all"
+format: html
+editor: visual
+---
+
+## Intention
+This is the document from which everything will be executed
