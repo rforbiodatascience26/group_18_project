@@ -26,18 +26,70 @@ batchCN_array_combined <- read_tsv(here("data/01_batchCN_array_combined_load.tsv
 
 ```
 
+Checking manually to see if everything looks good.
+
 ```{r}
 head(batchCN_array_combined)
 ```
 
-Make every gene a column and the sample a row
+To tidy the data we want to make the observations, that is the samples, into rows and the variables (genes) into columns.
 
 ```{r}
-
+batchCN_tidy <- batchCN_array_combined |> 
+  pivot_longer(
+    cols = -c(Gene_symbol, Probe_Id),
+    names_to = "Sample",
+    values_to = "Expression"
+  ) |> 
+  group_by(Sample, Gene_symbol) |>  
+  summarise(
+    Expression = mean(Expression, na.rm = TRUE),
+    .groups = "drop"
+    ) |> 
+  pivot_wider(
+    names_from = Gene_symbol,
+    values_from = Expression
+  )
 ```
 
-sort patient after tissue type which is mentioned after the sample. we want to thereby we use regex to get the patient_id and tissue_types which duplicates
+```{r}
+head(batchCN_tidy)
+```
+
+Take the average of replicate samples
 
 ```{r}
+batchCN_tidy_rmrep <- batchCN_tidy |> 
+  mutate(
+    Sample = str_remove(Sample, "^SAMPLE\\s+")
+    ) |> 
+  mutate(
+    Sample = str_remove(Sample, "\\s+Replicate$")
+    ) |> 
+  group_by(Sample) |> 
+  summarise(
+    across(where(is.numeric), ~ mean(.x, na.rm = TRUE)),
+    .groups = "drop"
+    ) 
+```
 
+```{r}
+head(batchCN_tidy_rmrep)
+```
+
+We want to separate tissue type from Sample.
+
+```{r}
+batchCN_tidy_rmrep_clean <- batchCN_tidy_rmrep |> 
+  mutate(
+    Tissue_type = word(Sample,2)
+    ) |> 
+  mutate(
+    Sample = word(Sample,1)
+    ) |> 
+  relocate(Tissue_type)
+```
+
+```{r}
+(batchCN_tidy_rmrep_clean)
 ```
