@@ -6,5 +6,51 @@ editor: visual
 
 ## Intention
 
-inputfile: 01_dat_load.tsv\
-outputfile: 02_dat_clean.tsv
+input file: 02_dat_clean.tsv\
+output file: 03_dat_aug.tsv
+
+```{r}
+library("tidyverse")
+library("here")
+```
+
+```{r}
+data_clean <- read_tsv(here("data/02_dat_clean.tsv"))
+```
+
+Add variables describing each sample
+
+```{r}
+data_aug <- data_clean |>
+  mutate(Group = case_when(Tissue_type == "CE" ~ "Control",
+                           Tissue_type == "CP" ~ "Control",
+                           TRUE ~ "Patient"),
+         Tissue = case_when(Tissue_type == "CE" ~ "Endometrium",
+                            Tissue_type == "PE" ~ "Endometrium",
+                            Tissue_type == "CP" ~ "Peritoneum",
+                            Tissue_type == "PP" ~ "Peritoneum",
+                            TRUE ~ "Lesion"),
+         Lesion_type = case_when(Tissue_type == "PeLR" ~ "Peritoneal lesion",
+                                 Tissue_type == "PeLB" ~ "Peritoneal lesion",
+                                 Tissue_type == "PeLW" ~ "Peritoneal lesion",
+                                 Tissue_type == "OMA" ~ "Ovarian endometrioma",
+                                 Tissue_type == "DiEIn" ~ "Deep infiltrating",
+                                 Tissue_type == "DiEB" ~ "Deep infiltrating",
+                                 Tissue_type == "SuL" ~ "Deep infiltrating",
+                                 Tissue_type == "REV" ~ "Deep infiltrating"),
+         Plot_group = case_when(Tissue == "Lesion" ~ Lesion_type,
+                                TRUE ~ str_c(Group, " ", str_to_lower(Tissue)))) |>
+  relocate(Sample, Tissue_type, Group, Tissue, Lesion_type, Plot_group)
+```
+
+Check that every tissue code got the right labels
+
+```{r}
+data_aug |>
+  count(Tissue_type, Group, Tissue, Lesion_type, Plot_group)
+```
+
+```{r}
+write_tsv(data_aug,
+          here("data/03_dat_aug.tsv"))
+```

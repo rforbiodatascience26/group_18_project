@@ -1,10 +1,138 @@
 ---
-title: "05_analysis_1"
+title: "05_analysis_1: Patient, control and lesion expression"
 format: html
 editor: visual
 ---
 
 ## Intention
 
-inputfile: 02_dat_clean.tsv\
-outputfile: 05_key_plot_2.png
+input file: 03_dat_aug.tsv\
+output files: results/05_rel_expr_grid.png, results/05_lesions_vs_controls.png
+
+Loading the libraries
+
+```{r}
+library("tidyverse")
+library("here")
+```
+
+Load the augmented data and make it long (one row per sample per gene)
+
+```{r}
+data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
+
+data_long <- data_aug |>
+  pivot_longer(cols = -c(Sample, Tissue_type, Group, Tissue, Lesion_type, Plot_group),
+               names_to = "Gene",
+               values_to = "Expression")
+
+dir.create(here("results"), showWarnings = FALSE)
+```
+
+## Plot 1: Patient vs. control in endometrium and peritoneum
+
+Relative expression = expression minus the control mean of the same tissue (CE for endometrium, CP for peritoneum).
+
+```{r}
+rel_expr <- data_long |>
+  filter(Tissue != "Lesion") |>
+  group_by(Gene, Tissue) |>
+  mutate(Rel_expr = Expression - mean(Expression[Group == "Control"], na.rm = TRUE)) |>
+  ungroup()
+
+top_genes <- rel_expr |>
+  filter(Group == "Patient") |>
+  group_by(Tissue, Gene) |>
+  summarise(Mean_rel_expr = mean(Rel_expr, na.rm = TRUE),
+            .groups = "drop_last") |>
+  slice_max(abs(Mean_rel_expr), n = 10) |>
+  pull(Gene) |>
+  unique()
+```
+
+```{r}
+#| fig-width: 14
+#| fig-height: 10
+rel_expr_plot <- rel_expr |>
+  filter(Gene %in% top_genes) |>
+  ggplot(aes(x = Tissue,
+             y = Rel_expr,
+             fill = Group)) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed") +
+  geom_boxplot(outlier.size = 0.5,
+               alpha = 0.7) +
+  facet_wrap(~ Gene,
+             scales = "free_y") +
+  labs(title = "Patient vs. control expression in endometrium and peritoneum",
+       subtitle = "Top 10 most changed genes per tissue, relative to the control mean of the same tissue",
+       x = "Tissue",
+       y = "Relative expression (log fold change vs. control)") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+rel_expr_plot
+
+ggsave(here("results/05_rel_expr_grid.png"),
+       plot = rel_expr_plot,
+       width = 14,
+       height = 10,
+       dpi = 300)
+```
+
+## Plot 2: Lesions vs. controls
+
+Genes are chosen where the lesions differ from both CE and CP in the same direction, ranked by the smaller of the two differences.
+
+```{r}
+top_genes_lesion <- data_long |>
+  group_by(Gene) |>
+  summarise(Diff_vs_CE = mean(Expression[Tissue == "Lesion"], na.rm = TRUE) -
+                         mean(Expression[Tissue_type == "CE"], na.rm = TRUE),
+            Diff_vs_CP = mean(Expression[Tissue == "Lesion"], na.rm = TRUE) -
+                         mean(Expression[Tissue_type == "CP"], na.rm = TRUE)) |>
+  filter(sign(Diff_vs_CE) == sign(Diff_vs_CP)) |>
+  slice_max(pmin(abs(Diff_vs_CE), abs(Diff_vs_CP)), n = 20) |>
+  pull(Gene)
+
+rel_expr_lesion <- data_long |>
+  filter(Gene %in% top_genes_lesion) |>
+  group_by(Gene) |>
+  mutate(Rel_expr = Expression - mean(Expression[Tissue_type == "CE"], na.rm = TRUE)) |>
+  ungroup()
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 11
+lesion_plot <- rel_expr_lesion |>
+  mutate(Plot_group = factor(Plot_group,
+                             levels = c("Control endometrium", "Patient endometrium",
+                                        "Control peritoneum", "Patient peritoneum",
+                                        "Peritoneal lesion", "Ovarian endometrioma",
+                                        "Deep infiltrating"))) |>
+  ggplot(aes(x = Plot_group,
+             y = Rel_expr,
+             fill = Tissue)) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed") +
+  geom_boxplot(outlier.size = 0.5,
+               alpha = 0.7) +
+  facet_wrap(~ Gene,
+             scales = "free_y") +
+  labs(title = "Endometriosis lesions compared with control tissues",
+       subtitle = "Top 20 genes where lesions differ from both control endometrium and control peritoneum",
+       x = NULL,
+       y = "Relative expression (log fold change vs. control endometrium)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+
+lesion_plot
+
+ggsave(here("results/05_lesions_vs_controls.png"),
+       plot = lesion_plot,
+       width = 15,
+       height = 11,
+       dpi = 300)
+```

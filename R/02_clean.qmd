@@ -1,5 +1,5 @@
 ---
-g---
+---
 title: "02_clean"
 format: html
 editor: visual
@@ -92,4 +92,11 @@ batchCN_tidy_rmrep_clean <- batchCN_tidy_rmrep |>
 
 ```{r}
 (batchCN_tidy_rmrep_clean)
+```
+
+Save the cleaned data
+
+```{r}
+write_tsv(batchCN_tidy_rmrep_clean,
+          here("data/02_dat_clean.tsv"))
 ```
