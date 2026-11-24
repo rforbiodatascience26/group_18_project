@@ -38,16 +38,23 @@ data_aug <- data_clean |>
                                  Tissue_type == "DiEB" ~ "Deep infiltrating",
                                  Tissue_type == "SuL" ~ "Deep infiltrating",
                                  Tissue_type == "REV" ~ "Deep infiltrating"),
+         Lesion_subtype = case_when(Tissue_type == "PeLB" ~ "Black",
+                                 Tissue_type == "PeLW" ~ "White",
+                                 Tissue_type == "PeLR" ~ "Red",
+                                 Tissue_type == "DiEIn" ~ "Intestinal",
+                                 Tissue_type == "DiEB" ~ "Bladder",
+                                 Tissue_type == "REV" ~ "Rectovaginal",
+                                 Tissue_type == "SuL" ~ "Sacrouterine ligament unknown"),
          Plot_group = case_when(Tissue == "Lesion" ~ Lesion_type,
                                 TRUE ~ str_c(Group, " ", str_to_lower(Tissue)))) |>
-  relocate(Sample, Tissue_type, Group, Tissue, Lesion_type, Plot_group)
+  relocate(Sample, Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group)
 ```
 
 Check that every tissue code got the right labels
 
 ```{r}
 data_aug |>
-  count(Tissue_type, Group, Tissue, Lesion_type, Plot_group)
+  count(Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group)
 ```
 
 ```{r}
