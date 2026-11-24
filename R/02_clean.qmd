@@ -1,16 +1,19 @@
 ---
----
 title: "02_clean"
 format: html
 editor: visual
 ---
 
-## intention
+## Intention
+
+The data given has the variables Gene_symbol, Probe_ID, and different samples. We would like have samples as unique observations in each row and gene having its own column.
+
+We use these files:
 
 input: datafile loaded\
 output file: 01_dat_load.tsv
 
-libraries:
+## Libraries
 
 ```{r}
 library("tidyverse")
@@ -18,7 +21,7 @@ library("readr")
 library("here")
 ```
 
-get loaded file
+## Load file
 
 ```{r}
 
@@ -26,13 +29,140 @@ batchCN_array_combined <- read_tsv(here("data/01_batchCN_array_combined_load.tsv
 
 ```
 
-Checking manually to see if everything looks good.
+## Clean data
+
+Checking manually to see how everything looks.
 
 ```{r}
 head(batchCN_array_combined)
 ```
 
 To tidy the data we want to make the observations, that is the samples, into rows and the variables (genes) into columns.
+
+Right now each row has a gene, and the collums are probe IDs and sample variables. First we try to see any genes are repeated.
+
+```{r}
+batchCN_array_combined |> 
+  group_by(Gene_symbol) |> 
+  summarise(n = n()) |> 
+  arrange(desc(n))
+```
+
+The genes being repeated means there are samples with multiple expression values, for the same gene. This is because there has been used different probes for each gene-sample pair, so we have multiple sets of expressions.
+
+We have chosen to take the mean for each gene-sample expressions, to not loose any data.
+
+We first group the genes, and nest the data for each gene. To visualize, we look at a single gene.
+
+```{r}
+batchCN_array_combined |> 
+  group_by(Gene_symbol) |> 
+  nest() |> 
+  filter(Gene_symbol == "RERE") |> 
+  unnest()
+```
+
+Now we want to privot the data so we are able to stratify on sample ID.
+
+```{r}
+batchCN_array_combined |> 
+  group_by(Gene_symbol) |> 
+  nest() |> 
+  filter(Gene_symbol == "RERE") |> 
+  mutate(data = map(.x = data,
+                    .f = ~pivot_longer(.x,
+                                       cols = starts_with("SAMPLE"),
+                                       names_to = "Sample_ID",
+                                       values_to = "Sample_expression"
+        ))) |> 
+  unnest()
+```
+
+Summarize the data by sample ID and get the average expression.
+
+```{r}
+batchCN_array_combined |> 
+  group_by(Gene_symbol) |> 
+  nest() |> 
+  filter(Gene_symbol == "RERE") |> 
+  mutate(data = map(.x = data,
+                    .f = ~pivot_longer(.x,
+                                       cols = starts_with("SAMPLE"),
+                                       names_to = "Sample_ID",
+                                       values_to = "Sample_expression"
+                    ))) |> 
+  mutate(data = map(.x = data,
+                    .f = ~summarize(.x, 
+                                    Avr_Ex = mean(Sample_expression),
+                                    .by = Sample_ID)
+         )) |> 
+  unnest()
+```
+
+Now we are do it on the whole data set, not just a single gene.
+
+```{r}
+avr_probe_batchCN_array_combined <- batchCN_array_combined |> 
+  group_by(Gene_symbol) |> 
+  nest() |> 
+  mutate(data = map(.x = data,
+                    .f = ~pivot_longer(.x,
+                                       cols = starts_with("SAMPLE"),
+                                       names_to = "Sample_ID",
+                                       values_to = "Sample_expression"
+                    ))) |> 
+  mutate(data = map(.x = data,
+                    .f = ~summarize(.x, 
+                                    Avr_Ex = mean(Sample_expression),
+                                    .by = Sample_ID)
+  )) |> 
+  unnest(cols = c(data))
+```
+
+```{r}
+avr_probe_batchCN_array_combined
+```
+
+The values from different probes have been averaged out.
+
+There are still some issues. Some of the sample IDs have "Replicate" in their name, so some samples are repeated!
+
+```{r}
+avr_probe_batchCN_array_combined |> 
+  filter(str_ends(Sample_ID, "Replicate"))
+```
+
+We take the mean of the repeat values with the original values across the genes.
+
+```{r}
+rep_removed_avr_probe_batchCN_array_combined <- avr_probe_batchCN_array_combined |> 
+  mutate(Sample_ID = str_remove(Sample_ID, " Replicate")) |> 
+  group_by(Sample_ID, Gene_symbol) |> 
+  summarize(Value_Corrected = mean(Avr_Ex))
+```
+
+```{r}
+rep_removed_avr_probe_batchCN_array_combined
+```
+
+Now each sample is a unique observation. We would still like to make each sample have its own row and the genes have its own columns.
+
+```{r}
+tidy_CN_array_combined <- rep_removed_avr_probe_batchCN_array_combined |> 
+  pivot_wider(names_from = Gene_symbol,
+              values_from = Value_Corrected)
+```
+
+```{r}
+tidy_CN_array_combined |> 
+  slice_head(n = 10)
+```
+
+Now the data is much more tidy.
+
+## Separate by tissue type
+
+Old code
 
 ```{r}
 batchCN_tidy <- batchCN_array_combined |> 
@@ -94,7 +224,7 @@ batchCN_tidy_rmrep_clean <- batchCN_tidy_rmrep |>
 (batchCN_tidy_rmrep_clean)
 ```
 
-Save the cleaned data
+## Save the cleaned data
 
 ```{r}
 write_tsv(batchCN_tidy_rmrep_clean,
