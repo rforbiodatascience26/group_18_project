@@ -8,10 +8,8 @@ editor: visual
 
 The data given has the variables Gene_symbol, Probe_ID, and different samples. We would like have samples as unique observations in each row and gene having its own column.
 
-We use these files:
-
-input: datafile loaded\
-output file: 01_dat_load.tsv
+Input file: `01_batchCN_array_combined_load.tsv`\
+Output file: `02_dat_clean.tsv`
 
 ## Libraries
 
@@ -113,7 +111,7 @@ avr_probe_batchCN_array_combined <- batchCN_array_combined |>
                     ))) |> 
   mutate(data = map(.x = data,
                     .f = ~summarize(.x, 
-                                    Avr_Ex = mean(Sample_expression),
+                                    Avr_Ex = mean(Sample_expression, na.rm = TRUE),
                                     .by = Sample_ID)
   )) |> 
   unnest(cols = c(data))
@@ -150,7 +148,8 @@ Now each sample is a unique observation. We would still like to make each sample
 ```{r}
 tidy_CN_array_combined <- rep_removed_avr_probe_batchCN_array_combined |> 
   pivot_wider(names_from = Gene_symbol,
-              values_from = Value_Corrected)
+              values_from = Value_Corrected) |> 
+  ungroup()
 ```
 
 ```{r}
@@ -161,6 +160,29 @@ tidy_CN_array_combined |>
 Now the data is much more tidy.
 
 ## Separate by tissue type
+
+Right now the sample IDs contain information about tissue type and if it is a control or not. We would like to extract this data so we are able to stratify lafter.
+
+```{r}
+tissue_CN_array_combined <- tidy_CN_array_combined |> 
+  separate_wider_delim(
+    Sample_ID,
+    delim = " ",
+    names = c(NA, "Sample", "Tissue_type"),
+    too_few = "align_start"
+    )
+```
+
+```{r}
+tissue_CN_array_combined
+```
+
+## Save the cleaned data
+
+```{r}
+write_tsv(batchCN_tidy_rmrep_clean,
+          here("data/02_dat_clean.tsv"))
+```
 
 Old code
 
@@ -222,11 +244,4 @@ batchCN_tidy_rmrep_clean <- batchCN_tidy_rmrep |>
 
 ```{r}
 (batchCN_tidy_rmrep_clean)
-```
-
-## Save the cleaned data
-
-```{r}
-write_tsv(batchCN_tidy_rmrep_clean,
-          here("data/02_dat_clean.tsv"))
 ```
