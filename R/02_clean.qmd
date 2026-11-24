@@ -32,7 +32,8 @@ batchCN_array_combined <- read_tsv(here("data/01_batchCN_array_combined_load.tsv
 Checking manually to see how everything looks.
 
 ```{r}
-head(batchCN_array_combined)
+batchCN_array_combined |> 
+  slice_head(n = 10)
 ```
 
 To tidy the data we want to make the observations, that is the samples, into rows and the variables (genes) into columns.
@@ -115,6 +116,23 @@ avr_probe_batchCN_array_combined <- batchCN_array_combined |>
                                     .by = Sample_ID)
   )) |> 
   unnest(cols = c(data))
+avr_probe_batchCN_array_combined
+```
+
+We group by sample ID and and gene symbol so the average is across gene+sample pairs.
+
+```{r}
+avr_probe_batchCN_array_combined <- batchCN_array_combined |> 
+  pivot_longer(
+    cols = starts_with("SAMPLE"),
+    names_to = "Sample_ID",
+    values_to = "Sample_expression"
+    ) |> 
+  group_by(Gene_symbol, Sample_ID) |> 
+  summarize(
+    Avr_Ex = mean(Sample_expression, na.rm = TRUE)) |> 
+  ungroup()
+avr_probe_batchCN_array_combined
 ```
 
 ```{r}
@@ -159,32 +177,14 @@ tidy_CN_array_combined |>
 
 Now the data is much more tidy.
 
-## Separate by tissue type
-
-Right now the sample IDs contain information about tissue type and if it is a control or not. We would like to extract this data so we are able to stratify lafter.
-
-```{r}
-tissue_CN_array_combined <- tidy_CN_array_combined |> 
-  separate_wider_delim(
-    Sample_ID,
-    delim = " ",
-    names = c(NA, "Sample", "Tissue_type"),
-    too_few = "align_start"
-    )
-```
-
-```{r}
-tissue_CN_array_combined
-```
-
 ## Save the cleaned data
 
 ```{r}
-write_tsv(batchCN_tidy_rmrep_clean,
+write_tsv(tidy_CN_array_combined,
           here("data/02_dat_clean.tsv"))
 ```
 
-Old code
+## Old code
 
 ```{r}
 batchCN_tidy <- batchCN_array_combined |> 
