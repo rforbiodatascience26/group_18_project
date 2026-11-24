@@ -6,8 +6,7 @@ editor: visual
 
 ## Intention
 
-inputfile: 02_dat_clean.tsv\
-outputfile: 03_dat_aug.tsv, 04_key_plot_1.png
+This file looks closer into the disctriptive data part were we look into now data is and if it fair to use it for data analysis.
 
 ```{r}
 library("tidyverse")
@@ -32,7 +31,32 @@ data_aug |>
   )
 ```
 
-Investigating how many NA values in the dataset because this data is empty.
+Here is a boxplot matched with the previous graph of amount of sample in each tissue. we see here that even though it is a nice boxplot for tissue DiEB there is only three observation so data analysis on this point is not a good idea.
+
+```{r}
+sample_stats <- data_long |>
+  group_by(Sample, Tissue_type) |>
+  summarise(
+    Mean_expression = mean(Expression),
+    SD_expression = sd(Expression),
+    .groups = "drop"
+  )
+sample_stats |>
+  ggplot(aes(x = Tissue_type, y = Mean_expression)) +
+  geom_boxplot(fill = "red") +
+  geom_jitter(width = 0.15, alpha = 0.4) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  labs(
+    title = "Mean gene expression across samples",
+    x = "Tissue type",
+    y = "Mean expression per sample"
+  )
+```
+
+Investigating how many NA values in the dataset.
 
 ```{r}
 data_long |>
@@ -44,7 +68,7 @@ data_long |>
   )
 ```
 
-we want to investigate the SD of gene expression within the differernt tissue types. We can assume that the expression of a gene varies for the tissue type so what is important here is to see if the SD of the gene in the specific tissue is little.
+we want to see what the SD of gene expression within the differernt tissue types. We can assume that the expression of a gene varies for the tissue type so what is important here is to see if the SD of the gene in the specific tissue is little.
 
 ```{r}
 gene_sd_tissue <- data_long |>
@@ -74,29 +98,4 @@ gene_sd_tissue |>
   )
 ```
 
-we see here that the standard deviation is right-skreved  - this shows that the SD of the gene expression in different tissues is little, however there is still some outliers as we can see since some of the SD values are almost 1.5
-
-Here is a boxplot matched with the previous graph of amount of sample in each tissue. we see here that even though it is a nice boxplot for tissue DiEB there is only three observation so data analysis on this point is not a good idea.
-
-```{r}
-sample_stats <- data_long |>
-  group_by(Sample, Tissue_type) |>
-  summarise(
-    Mean_expression = mean(Expression),
-    SD_expression = sd(Expression),
-    .groups = "drop"
-  )
-sample_stats |>
-  ggplot(aes(x = Tissue_type, y = Mean_expression)) +
-  geom_boxplot(fill = "red") +
-  geom_jitter(width = 0.15, alpha = 0.4) +
-  theme_classic() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  ) +
-  labs(
-    title = "Mean gene expression across samples",
-    x = "Tissue type",
-    y = "Mean expression per sample"
-  )
-```
+we see here that the standard deviation is right-skewed - this shows that the SD of the gene expression in different tissues is little, however there is still some gene expression in some tissues where the SD values are almost 1.5
