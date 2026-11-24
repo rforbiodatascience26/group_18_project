@@ -4,9 +4,9 @@ Project repository for Group 18
 
 # Project Contributors
 
-s245934 - lunoidT \
-s245049 - iskalbo-hash \
-s245807 - MayaGram \
+s245934 - lunoidT\
+s245049 - iskalbo-hash\
+s245807 - MayaGram\
 s233966 - He-Her0\
 s244321 - AlishaGoandal
 
