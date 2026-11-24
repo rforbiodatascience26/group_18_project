@@ -39,7 +39,7 @@ data_tissue <- data_clean |>
 ```
 
 ```{r}
-tissue_CN_array_combined
+data_tissue
 ```
 
 ## Expanding variables
