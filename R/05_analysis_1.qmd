@@ -7,110 +7,318 @@ editor: visual
 ## Intention
 
 input file: 03_dat_aug.tsv\
-output files: results/05_rel_expr_grid.png, results/05_lesions_vs_controls.png
+output files: results/05_rel_expr_all_genes_hist.png, results/05_rel_expr_bar.png, results/05_top10_endo_grid.png, results/05_top10_peri_grid.png, results/05_lesion_all_genes_hist.png, results/05_lesion_bar.png, results/05_top10_peritoneal_lesion_grid.png, results/05_top10_ovarian_lesion_grid.png, results/05_top10_deep_lesion_grid.png
 
-Loading the libraries
+## Loading the libraries and data
 
 ```{r}
 library("tidyverse")
 library("here")
 ```
 
-Load the augmented data and make it long (one row per sample per gene)
+Load the augmented data, arrange groups and make the data long (one row per sample per gene)
 
 ```{r}
-data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
+#read data and fix the order of the groups so plots don't sort them alphabetically
+data_aug <- read_tsv(here("data/03_dat_aug.tsv")) |>
+  mutate(Plot_group = factor(Plot_group,
+                             levels = c("Control endometrium", "Patient endometrium",
+                                        "Control peritoneum", "Patient peritoneum",
+                                        "Peritoneal lesion", "Ovarian endometrioma",
+                                        "Deep infiltrating")))
 
+#long format: one row per sample per gene
 data_long <- data_aug |>
   pivot_longer(cols = -c(Sample, Tissue_type, Group, Tissue, Lesion_type, Plot_group),
                names_to = "Gene",
                values_to = "Expression")
 
+#make results folder
 dir.create(here("results"), showWarnings = FALSE)
 ```
 
 ## Plot 1: Patient vs. control in endometrium and peritoneum
 
+### Calculations
+
+Calculating relative expression for endometrium and peritoneum samples, and finding the top 10 most changed genes in each tissue.
+
 Relative expression = expression minus the control mean of the same tissue (CE for endometrium, CP for peritoneum).
 
 ```{r}
+#subtract the CE mean from endometrium samples and the CP mean from peritoneum samples
 rel_expr <- data_long |>
   filter(Tissue != "Lesion") |>
-  group_by(Gene, Tissue) |>
-  mutate(Rel_expr = Expression - mean(Expression[Group == "Control"], na.rm = TRUE)) |>
+  group_by(Gene) |>
+  mutate(Rel_expr = case_when(
+    Tissue == "Endometrium" ~ Expression - mean(Expression[Tissue_type == "CE"], na.rm = TRUE),
+    Tissue == "Peritoneum"  ~ Expression - mean(Expression[Tissue_type == "CP"], na.rm = TRUE))) |>
   ungroup()
 
-top_genes <- rel_expr |>
+#mean change per gene in patients, for every gene
+rel_expr_means <- rel_expr |>
   filter(Group == "Patient") |>
   group_by(Tissue, Gene) |>
   summarise(Mean_rel_expr = mean(Rel_expr, na.rm = TRUE),
-            .groups = "drop_last") |>
+            .groups = "drop")
+
+#the 10 biggest changes (up or down) per tissue
+rel_expr_top10 <- rel_expr_means |>
+  group_by(Tissue) |>
   slice_max(abs(Mean_rel_expr), n = 10) |>
-  pull(Gene) |>
-  unique()
+  ungroup() |>
+  mutate(Gene = fct_reorder(Gene, Mean_rel_expr))
+
+#defining the top 10 genes, used for the plots
+top10_endo_genes <- rel_expr_top10 |> filter(Tissue == "Endometrium") |> pull(Gene) |> as.character()
+top10_peri_genes <- rel_expr_top10 |> filter(Tissue == "Peritoneum") |> pull(Gene) |> as.character()
+
+#relative expression vs. CE and vs. CP for all samples, used in the boxplots
+rel_expr_ce <- data_long |>
+  group_by(Gene) |>
+  mutate(Rel_expr = Expression - mean(Expression[Tissue_type == "CE"], na.rm = TRUE)) |>
+  ungroup()
+
+rel_expr_cp <- data_long |>
+  group_by(Gene) |>
+  mutate(Rel_expr = Expression - mean(Expression[Tissue_type == "CP"], na.rm = TRUE)) |>
+  ungroup()
+
+top10_endo_genes
+top10_peri_genes
 ```
+
+### Histogram of the mean relative expression for all genes
+
+```{r}
+#| fig-width: 12
+#| fig-height: 6
+#plotting histogram of all genes
+rel_expr_all_hist <- rel_expr_means |>
+  ggplot(aes(x = Mean_rel_expr,
+             fill = Tissue)) +
+  geom_histogram(bins = 100,
+                 alpha = 0.8) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  facet_wrap(~ Tissue) +
+  labs(title = "Distribution of relative expression across all genes",
+       subtitle = "Mean relative expression per gene in patients (PE vs. CE, PP vs. CP)",
+       x = "Mean relative expression",
+       y = "Number of genes") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+rel_expr_all_hist
+
+ggsave(here("results/05_rel_expr_all_genes_hist.png"),
+       plot = rel_expr_all_hist,
+       width = 12,
+       height = 6,
+       dpi = 300)
+```
+
+### Bar plot of the top 10 genes per tissue, showing how much they go up or down in patients
+
+```{r}
+#| fig-width: 12
+#| fig-height: 6
+rel_expr_bar <- rel_expr_top10 |>
+  ggplot(aes(x = Gene,
+             y = Mean_rel_expr,
+             fill = Tissue)) +
+  geom_col(alpha = 0.8) +
+  geom_hline(yintercept = 0) +
+  #two panels in the plot, one panel per tissue, showing the top 10 genes
+  facet_wrap(~ Tissue,
+             scales = "free_x") +
+  labs(title = "Relative expression: patient vs. control",
+       subtitle = "Top 10 genes with biggest expression difference per tissue (PE vs. CE, PP vs. CP)",
+       x = NULL,
+       y = "Mean relative expression") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+rel_expr_bar
+
+ggsave(here("results/05_rel_expr_bar.png"),
+       plot = rel_expr_bar,
+       width = 12,
+       height = 6,
+       dpi = 300)
+
+```
+
+### Boxplots of the top 10 endometrium genes across all groups, relative to CE
 
 ```{r}
 #| fig-width: 14
-#| fig-height: 10
-rel_expr_plot <- rel_expr |>
-  filter(Gene %in% top_genes) |>
-  ggplot(aes(x = Tissue,
+#| fig-height: 8
+#plot showing relative expression to CE for all samples, including peritoneum and lesions
+endo_plot <- rel_expr_ce |>
+  filter(Gene %in% top10_endo_genes) |>
+  ggplot(aes(x = Plot_group,
              y = Rel_expr,
-             fill = Group)) +
+             fill = Tissue)) +
   geom_hline(yintercept = 0,
              linetype = "dashed") +
   geom_boxplot(outlier.size = 0.5,
                alpha = 0.7) +
+  #one panel per gene
   facet_wrap(~ Gene,
+             ncol = 5,
              scales = "free_y") +
-  labs(title = "Patient vs. control expression in endometrium and peritoneum",
-       subtitle = "Top 10 most changed genes per tissue, relative to the control mean of the same tissue",
-       x = "Tissue",
-       y = "Relative expression (log fold change vs. control)") +
+  labs(title = "Top 10 changed genes in endometrium across all groups",
+       x = NULL,
+       y = "Relative expression") +
   theme_bw() +
-  theme(legend.position = "bottom")
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
 
-rel_expr_plot
+endo_plot
 
-ggsave(here("results/05_rel_expr_grid.png"),
-       plot = rel_expr_plot,
+ggsave(here("results/05_top10_endo_grid.png"),
+       plot = endo_plot,
        width = 14,
-       height = 10,
+       height = 8,
        dpi = 300)
 ```
 
-## Plot 2: Lesions vs. controls
-
-Genes are chosen where the lesions differ from both CE and CP in the same direction, ranked by the smaller of the two differences.
+### Boxplots of the top 10 peritoneum genes across all groups, relative to CP
 
 ```{r}
-top_genes_lesion <- data_long |>
-  group_by(Gene) |>
-  summarise(Diff_vs_CE = mean(Expression[Tissue == "Lesion"], na.rm = TRUE) -
-                         mean(Expression[Tissue_type == "CE"], na.rm = TRUE),
-            Diff_vs_CP = mean(Expression[Tissue == "Lesion"], na.rm = TRUE) -
-                         mean(Expression[Tissue_type == "CP"], na.rm = TRUE)) |>
-  filter(sign(Diff_vs_CE) == sign(Diff_vs_CP)) |>
-  slice_max(pmin(abs(Diff_vs_CE), abs(Diff_vs_CP)), n = 20) |>
-  pull(Gene)
+#| fig-width: 14
+#| fig-height: 8
+#same as above but relative to CP
+peri_plot <- rel_expr_cp |>
+  filter(Gene %in% top10_peri_genes) |>
+  ggplot(aes(x = Plot_group,
+             y = Rel_expr,
+             fill = Tissue)) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed") +
+  geom_boxplot(outlier.size = 0.5,
+               alpha = 0.7) +
+  #one panel per gene
+  facet_wrap(~ Gene,
+             ncol = 5,
+             scales = "free_y") +
+  labs(title = "Top 10 changed genes in peritoneum across all groups",
+       x = NULL,
+       y = "Relative expression") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
 
-rel_expr_lesion <- data_long |>
-  filter(Gene %in% top_genes_lesion) |>
-  group_by(Gene) |>
-  mutate(Rel_expr = Expression - mean(Expression[Tissue_type == "CE"], na.rm = TRUE)) |>
-  ungroup()
+peri_plot
+
+ggsave(here("results/05_top10_peri_grid.png"),
+       plot = peri_plot,
+       width = 14,
+       height = 8,
+       dpi = 300)
 ```
 
+## Plot 2: Lesions vs. control endometrium
+
+### Calculations
+
+Using the relative expression vs. CE from Plot 1 to find the top 10 most changed genes for each lesion type.
+
 ```{r}
-#| fig-width: 15
-#| fig-height: 11
-lesion_plot <- rel_expr_lesion |>
-  mutate(Plot_group = factor(Plot_group,
-                             levels = c("Control endometrium", "Patient endometrium",
-                                        "Control peritoneum", "Patient peritoneum",
-                                        "Peritoneal lesion", "Ovarian endometrioma",
-                                        "Deep infiltrating"))) |>
+#mean change per gene vs. CE in each lesion type, for every gene
+lesion_means <- rel_expr_ce |>
+  filter(Tissue == "Lesion") |>
+  group_by(Lesion_type, Gene) |>
+  summarise(Mean_rel_expr = mean(Rel_expr, na.rm = TRUE),
+            .groups = "drop")
+
+#the 10 biggest changes per lesion type
+lesion_top10 <- lesion_means |>
+  group_by(Lesion_type) |>
+  slice_max(abs(Mean_rel_expr), n = 10) |>
+  ungroup() |>
+  mutate(Gene = fct_reorder(Gene, Mean_rel_expr))
+
+#defining the top 10 genes for each lesion type, used for the plots
+top10_peritoneal_genes <- lesion_top10 |> filter(Lesion_type == "Peritoneal lesion") |> pull(Gene) |> as.character()
+top10_ovarian_genes    <- lesion_top10 |> filter(Lesion_type == "Ovarian endometrioma") |> pull(Gene) |> as.character()
+top10_deep_genes       <- lesion_top10 |> filter(Lesion_type == "Deep infiltrating") |> pull(Gene) |> as.character()
+
+top10_peritoneal_genes
+top10_ovarian_genes
+top10_deep_genes
+```
+
+### Histogram of the mean relative expression for all genes in each lesion type
+
+```{r}
+#| fig-width: 14
+#| fig-height: 5
+#plotting histogram of all genes, per lesion
+lesion_all_hist <- lesion_means |>
+  ggplot(aes(x = Mean_rel_expr,
+             fill = Lesion_type)) +
+  geom_histogram(bins = 100,
+                 alpha = 0.8) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  facet_wrap(~ Lesion_type) +
+  labs(title = "Distribution of relative expression across all genes",
+       subtitle = "Mean expression per gene in each lesion type minus control endometrium (CE)",
+       x = "Mean relative expression",
+       y = "Number of genes") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+lesion_all_hist
+
+ggsave(here("results/05_lesion_all_genes_hist.png"),
+       plot = lesion_all_hist,
+       width = 14,
+       height = 5,
+       dpi = 300)
+```
+
+### Bar plot of the top 10 genes per lesion type compared to CE
+
+```{r}
+#| fig-width: 14
+#| fig-height: 6
+lesion_bar <- lesion_top10 |>
+  ggplot(aes(x = Gene,
+             y = Mean_rel_expr,
+             fill = Lesion_type)) +
+  geom_col(alpha = 0.8) +
+  geom_hline(yintercept = 0) +
+  #one panel per lesion type
+  facet_wrap(~ Lesion_type,
+             scales = "free_x") +
+  labs(title = "Relative expression: lesions vs. control endometrium",
+       subtitle = "Top 10 genes with biggest expression difference per lesion type",
+       x = NULL,
+       y = "Mean relative expression") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+lesion_bar
+
+ggsave(here("results/05_lesion_bar.png"),
+       plot = lesion_bar,
+       width = 14,
+       height = 6,
+       dpi = 300)
+```
+
+### Boxplots of the top 10 peritoneal lesion genes across all groups
+
+```{r}
+#| fig-width: 14
+#| fig-height: 8
+peritoneal_plot <- rel_expr_ce |>
+  filter(Gene %in% top10_peritoneal_genes) |>
   ggplot(aes(x = Plot_group,
              y = Rel_expr,
              fill = Tissue)) +
@@ -119,20 +327,86 @@ lesion_plot <- rel_expr_lesion |>
   geom_boxplot(outlier.size = 0.5,
                alpha = 0.7) +
   facet_wrap(~ Gene,
+             ncol = 5,
              scales = "free_y") +
-  labs(title = "Endometriosis lesions compared with control tissues",
-       subtitle = "Top 20 genes where lesions differ from both control endometrium and control peritoneum",
+  labs(title = "Top 10 changed genes in peritoneal lesions vs. control endometrium",
        x = NULL,
-       y = "Relative expression (log fold change vs. control endometrium)") +
+       y = "Relative expression") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom")
 
-lesion_plot
+peritoneal_plot
 
-ggsave(here("results/05_lesions_vs_controls.png"),
-       plot = lesion_plot,
-       width = 15,
-       height = 11,
+ggsave(here("results/05_top10_peritoneal_lesion_grid.png"),
+       plot = peritoneal_plot,
+       width = 14,
+       height = 8,
+       dpi = 300)
+```
+
+### Boxplots of the top 10 ovarian endometrioma genes across all groups
+
+```{r}
+#| fig-width: 14
+#| fig-height: 8
+ovarian_plot <- rel_expr_ce |>
+  filter(Gene %in% top10_ovarian_genes) |>
+  ggplot(aes(x = Plot_group,
+             y = Rel_expr,
+             fill = Tissue)) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed") +
+  geom_boxplot(outlier.size = 0.5,
+               alpha = 0.7) +
+  facet_wrap(~ Gene,
+             ncol = 5,
+             scales = "free_y") +
+  labs(title = "Top 10 changed genes in ovarian endometrioma vs. control endometrium",
+       x = NULL,
+       y = "Relative expression") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+
+ovarian_plot
+
+ggsave(here("results/05_top10_ovarian_lesion_grid.png"),
+       plot = ovarian_plot,
+       width = 14,
+       height = 8,
+       dpi = 300)
+```
+
+### Boxplots of the top 10 deep infiltrating lesion genes across all groups
+
+```{r}
+#| fig-width: 14
+#| fig-height: 8
+deep_plot <- rel_expr_ce |>
+  filter(Gene %in% top10_deep_genes) |>
+  ggplot(aes(x = Plot_group,
+             y = Rel_expr,
+             fill = Tissue)) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed") +
+  geom_boxplot(outlier.size = 0.5,
+               alpha = 0.7) +
+  facet_wrap(~ Gene,
+             ncol = 5,
+             scales = "free_y") +
+  labs(title = "Top 10 changed genes in deep infiltrating lesions vs. control endometrium",
+       x = NULL,
+       y = "Relative expression") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+
+deep_plot
+
+ggsave(here("results/05_top10_deep_lesion_grid.png"),
+       plot = deep_plot,
+       width = 14,
+       height = 8,
        dpi = 300)
 ```
