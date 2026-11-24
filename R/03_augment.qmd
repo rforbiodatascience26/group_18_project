@@ -26,7 +26,7 @@ data_clean <- read_tsv(here("data/02_dat_clean.tsv"))
 
 ## Separate by tissue type
 
-Right now the sample IDs contain information about tissue type and if it is a control or not. We would like to extract this data so we are able to stratify lafter.
+Right now the sample IDs contain information about tissue type and if it is a control or not. We would like to extract this data so we are able to stratify later.
 
 ```{r}
 data_tissue <- data_clean |> 
