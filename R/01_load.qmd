@@ -21,7 +21,6 @@ dir.create(here("data", "_raw"), recursive = TRUE, showWarnings = FALSE)
 ```
 
 ```{r}
-#| eval: FALSE
 urls <- c("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE141nnn/GSE141549/suppl/GSE141549%5FIllumina%5FHumanHT%2D12%5FV4%2E0%5Fexpression%5Fbeadchip%5Fnormalized%2Exlsx",
 
           "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE141nnn/GSE141549/suppl/GSE141549%5FIllumina%5FHumanWG%2D6%5Fv2%2E0%5Fexpression%5Fbeadchip%5Fnormalized%2Exlsx",
@@ -40,10 +39,13 @@ destfiles <- c("data/_raw/illum_HT.gz",
                "data/_raw/Sample_link.gz",
                "data/_raw/batchCN_array_combined.gz")
 
-download.file(url = urls, 
-              destfile = here(destfiles),
-              method = "libcurl",
-              mode = "wb")
+# Only downloading if a file is missing
+if ( !all(file.exists(here(destfiles))) ) {
+  download.file(url = urls, 
+                destfile = here(destfiles),
+                method = "libcurl",
+                mode = "wb")
+}
 ```
 
 Manual check of files

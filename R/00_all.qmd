@@ -5,4 +5,72 @@ editor: visual
 ---
 
 ## Intention
+
 This is the document from which everything will be executed
+
+## Libraries
+
+```{r}
+library("tidyverse")
+library("readr")
+library("here")
+library("readxl")
+library("knitr")
+```
+
+## Run program
+
+Run entire project by running this entire file.
+
+## Code
+
+Only running files if their output file hasn't been created.
+
+```{r}
+if (!dir.exists(here("data"))) {
+  source(purl(here("R/01_load.qmd"),
+              output = tempfile(fileext = ".R"),
+              quiet = TRUE))
+}
+
+```
+
+```{r}
+if (!file.exists(here("data/02_dat_clean.tsv"))) {
+  source(purl(here("R/02_clean.qmd"),
+              output = tempfile(fileext = ".R"),
+              quiet = TRUE)) 
+}
+```
+
+```{r}
+if (!file.exists(here("data/03_aug.tsv"))) {
+  source(purl(here("R/03_augment.qmd"),
+              output = tempfile(fileext = ".R"),
+              quiet = TRUE)) 
+}
+```
+
+```{r}
+source(purl(here("R/04_describe.qmd"),
+            output = tempfile(fileext = ".R"),
+            quiet = TRUE))
+```
+
+```{r}
+source(purl(here("R/05_analysis_1.qmd"),
+            output = tempfile(fileext = ".R"),
+            quiet = TRUE))
+```
+
+```{r}
+source(purl(here("R/06_analysis_2.qmd"),
+            output = tempfile(fileext = ".R"),
+            quiet = TRUE))
+```
+
+```{r}
+source(purl(here("R/07_analysis_3.qmd"),
+            output = tempfile(fileext = ".R"),
+            quiet = TRUE))
+```
