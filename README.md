@@ -3,16 +3,20 @@
 Project repository for Group 18
 
 # Project Contributors
-s245934 - lunoidT
-s245049 - iskalbo-hash
-s245807 - MayaGram
-s233966 - He-Her0
+
+s245934 - lunoidT \
+s245049 - iskalbo-hash \
+s245807 - MayaGram \
+s233966 - He-Her0\
 s244321 - AlishaGoandal
 
-# Link to presentation:
+# Link to presentation
+
+TBD
 
 # How to retrieve the data
- TBD 
+
+TBD
 
 ( information about data. might not be final in readme but another place? )
 
