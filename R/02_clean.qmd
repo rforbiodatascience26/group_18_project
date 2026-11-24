@@ -38,7 +38,7 @@ batchCN_array_combined |>
 
 To tidy the data we want to make the observations, that is the samples, into rows and the variables (genes) into columns.
 
-Right now each row has a gene, and the collums are probe IDs and sample variables. First we try to see any genes are repeated.
+Right now each row has a gene, and the colums are probe IDs and sample variables. First we try to see any genes are repeated.
 
 ```{r}
 batchCN_array_combined |> 
@@ -49,77 +49,44 @@ batchCN_array_combined |>
 
 The genes being repeated means there are samples with multiple expression values, for the same gene. This is because there has been used different probes for each gene-sample pair, so we have multiple sets of expressions.
 
-We have chosen to take the mean for each gene-sample expressions, to not loose any data.
+We have chosen to take the mean for each gene-sample expressions, to not lose any data.
 
-We first group the genes, and nest the data for each gene. To visualize, we look at a single gene.
-
-```{r}
-batchCN_array_combined |> 
-  group_by(Gene_symbol) |> 
-  nest() |> 
-  filter(Gene_symbol == "RERE") |> 
-  unnest()
-```
-
-Now we want to privot the data so we are able to stratify on sample ID.
+To visualize, we look at a single gene.
 
 ```{r}
 batchCN_array_combined |> 
-  group_by(Gene_symbol) |> 
-  nest() |> 
-  filter(Gene_symbol == "RERE") |> 
-  mutate(data = map(.x = data,
-                    .f = ~pivot_longer(.x,
-                                       cols = starts_with("SAMPLE"),
-                                       names_to = "Sample_ID",
-                                       values_to = "Sample_expression"
-        ))) |> 
-  unnest()
+  filter(Gene_symbol == "RERE") 
 ```
 
-Summarize the data by sample ID and get the average expression.
+Now we want to pivot the data so we are able to group by sample ID.
 
 ```{r}
 batchCN_array_combined |> 
-  group_by(Gene_symbol) |> 
-  nest() |> 
   filter(Gene_symbol == "RERE") |> 
-  mutate(data = map(.x = data,
-                    .f = ~pivot_longer(.x,
-                                       cols = starts_with("SAMPLE"),
-                                       names_to = "Sample_ID",
-                                       values_to = "Sample_expression"
-                    ))) |> 
-  mutate(data = map(.x = data,
-                    .f = ~summarize(.x, 
-                                    Avr_Ex = mean(Sample_expression),
-                                    .by = Sample_ID)
-         )) |> 
-  unnest()
+  pivot_longer(
+    cols = starts_with("SAMPLE"),
+    names_to = "Sample_ID",
+    values_to = "Sample_expression"
+  )
 ```
 
-Now we are do it on the whole data set, not just a single gene.
+We group by sample ID and gene symbol so the average is across gene+sample pairs.
 
 ```{r}
-avr_probe_batchCN_array_combined <- batchCN_array_combined |> 
-  group_by(Gene_symbol) |> 
-  nest() |> 
-  mutate(data = map(.x = data,
-                    .f = ~pivot_longer(.x,
-                                       cols = starts_with("SAMPLE"),
-                                       names_to = "Sample_ID",
-                                       values_to = "Sample_expression"
-                    ))) |> 
-  mutate(data = map(.x = data,
-                    .f = ~summarize(.x, 
-                                    Avr_Ex = mean(Sample_expression, na.rm = TRUE),
-                                    .by = Sample_ID)
-  )) |> 
-  unnest(cols = c(data))
-avr_probe_batchCN_array_combined
+batchCN_array_combined |> 
+  filter(Gene_symbol == "RERE") |> 
+  pivot_longer(
+    cols = starts_with("SAMPLE"),
+    names_to = "Sample_ID",
+    values_to = "Sample_expression"
+    ) |> 
+  group_by(Gene_symbol, Sample_ID) |> 
+  summarize(
+    Avr_Ex = mean(Sample_expression, na.rm = TRUE)) |> 
+  ungroup()
 ```
 
-We group by sample ID and and gene symbol so the average is across gene+sample pairs.
+Now we do it on the whole data set, not just a single gene.
 
 ```{r}
 avr_probe_batchCN_array_combined <- batchCN_array_combined |> 
@@ -135,11 +102,7 @@ avr_probe_batchCN_array_combined <- batchCN_array_combined |>
 avr_probe_batchCN_array_combined
 ```
 
-```{r}
-avr_probe_batchCN_array_combined
-```
-
-The values from different probes have been averaged out.
+The values from different probes have now been averaged out.
 
 There are still some issues. Some of the sample IDs have "Replicate" in their name, so some samples are repeated!
 
@@ -154,7 +117,9 @@ We take the mean of the repeat values with the original values across the genes.
 rep_removed_avr_probe_batchCN_array_combined <- avr_probe_batchCN_array_combined |> 
   mutate(Sample_ID = str_remove(Sample_ID, " Replicate")) |> 
   group_by(Sample_ID, Gene_symbol) |> 
-  summarize(Value_Corrected = mean(Avr_Ex))
+  summarize(Value_Corrected = mean(Avr_Ex,
+                                   na.rm = TRUE)) |> 
+  ungroup()
 ```
 
 ```{r}
@@ -166,8 +131,7 @@ Now each sample is a unique observation. We would still like to make each sample
 ```{r}
 tidy_CN_array_combined <- rep_removed_avr_probe_batchCN_array_combined |> 
   pivot_wider(names_from = Gene_symbol,
-              values_from = Value_Corrected) |> 
-  ungroup()
+              values_from = Value_Corrected)
 ```
 
 ```{r}
@@ -182,66 +146,4 @@ Now the data is much more tidy.
 ```{r}
 write_tsv(tidy_CN_array_combined,
           here("data/02_dat_clean.tsv"))
-```
-
-## Old code
-
-```{r}
-batchCN_tidy <- batchCN_array_combined |> 
-  pivot_longer(
-    cols = -c(Gene_symbol, Probe_Id),
-    names_to = "Sample",
-    values_to = "Expression"
-  ) |> 
-  group_by(Sample, Gene_symbol) |>  
-  summarise(
-    Expression = mean(Expression, na.rm = TRUE),
-    .groups = "drop"
-    ) |> 
-  pivot_wider(
-    names_from = Gene_symbol,
-    values_from = Expression
-  )
-```
-
-```{r}
-head(batchCN_tidy)
-```
-
-Take the average of replicate samples
-
-```{r}
-batchCN_tidy_rmrep <- batchCN_tidy |> 
-  mutate(
-    Sample = str_remove(Sample, "^SAMPLE\\s+")
-    ) |> 
-  mutate(
-    Sample = str_remove(Sample, "\\s+Replicate$")
-    ) |> 
-  group_by(Sample) |> 
-  summarise(
-    across(where(is.numeric), ~ mean(.x, na.rm = TRUE)),
-    .groups = "drop"
-    ) 
-```
-
-```{r}
-head(batchCN_tidy_rmrep)
-```
-
-We want to separate tissue type from Sample.
-
-```{r}
-batchCN_tidy_rmrep_clean <- batchCN_tidy_rmrep |> 
-  mutate(
-    Tissue_type = word(Sample,2)
-    ) |> 
-  mutate(
-    Sample = word(Sample,1)
-    ) |> 
-  relocate(Tissue_type)
-```
-
-```{r}
-(batchCN_tidy_rmrep_clean)
 ```
