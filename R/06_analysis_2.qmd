@@ -9,6 +9,8 @@ editor: visual
 input file: 03_dat_aug.tsv\
 outputfile: 06_key_plot_3.png
 
+We want to look at the peritoneal lesions and if there is a difference in gene expressions for the different subtypes compared to the controls.
+
 Load libraries
 
 ```{r}
@@ -16,7 +18,7 @@ library("tidyverse")
 library("here")
 ```
 
-Load data
+Load data from 03_data_aug.tsv
 
 ```{r}
 data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
@@ -26,13 +28,50 @@ data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
 data_aug
 ```
 
+Selecting data regarding peritoneal lesions and the control group "Control peritoneum"
+
 ```{r}
-data_aug |> 
+peri_data_long <- data_aug |> 
   filter(Lesion_type == "Peritoneal lesion" |
            (Group == "Control" & Tissue == "Peritoneum")
   ) |> 
   select(-Lesion_type,-Tissue) |> 
-  mutate(Rel_expr = Expression - mean(Expression[Group == "Control"], na.rm = TRUE))
+  pivot_longer(cols = -c(Sample, Tissue_type, Lesion_subtype, Group, Plot_group),
+               names_to = "Gene",
+               values_to = "Expression")
+peri_data_long
+```
 
-  
+Making a tibble of control values for the genes
+
+```{r}
+control_vals <- peri_data_long |>
+  filter(Group == "Control") |>
+  select(Gene, control_expr = Expression)
+control_vals
+```
+
+```{r}
+
+```
+
+Finding the difference between gene expression in the control group vs. the patient subtypes.
+
+```{r}
+subtype_diffs <- peri_data_long |>
+  filter(Group == "Patient", Lesion_subtype %in% c("Red", "White", "Black")) |>
+  left_join(control_vals, by = "Gene") |> 
+  group_by(Lesion_subtype, Gene) |>
+  summarise(
+    subtype_mean = mean(Expression, na.rm = TRUE),
+    control_expr = first(control_expr),
+    log2_ = abs(subtype_mean - control_expr),
+    p_value = t.test(Expression, mu = first(control_expr))$p.value,
+    stderror = t.test(Expression, mu = first(control_expr))$stderr,
+    dof =  t.test(Expression, mu = first(control_expr))$parameter,
+    .groups = "drop"
+  ) |>
+  arrange(Lesion_subtype, p_value)
+
+subtype_diffs
 ```
