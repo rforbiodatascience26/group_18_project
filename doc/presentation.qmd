@@ -11,11 +11,7 @@ format:
 editor: visual
 ---
 
-## Background and aim
-
-**Data:**
-
-- ...
+## Introduction
 
 **Backround**:
 
@@ -25,7 +21,13 @@ editor: visual
 
 - In our project we aimed to...
 
-## Methods
+## Materials and Methods
+
+**Data:**
+
+- ...
+
+**Workflow:**
 
 - Load --> Clean --> Augment --> Describe --> Analyse
 
@@ -52,6 +54,8 @@ data_aug <- data_tissue |>
   relocate(Sample, Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group)
 ```
 
+## Desrcibe (04_describe.qmd)
+
 ## Analysis 1 (05_analysis_1.qmd)
 
 **Relative expression = sample expression − mean of the controls**
@@ -68,9 +72,7 @@ data_aug <- data_tissue |>
 
 ## Analysis 3 (07_analysis_3.qmd)
 
-## Results
-
-## Discussion and conclusion
+## Results and discussion
 
 ```{=html}
 <style>
