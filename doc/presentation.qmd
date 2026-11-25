@@ -1,0 +1,79 @@
+---
+title: "A relational database to identify differentially expressed genes in the endometrium and endometriosis lesions"
+author: "Alisha, Isabella, Luna, Marius, Maya"
+title-slide-attributes:
+  data-visibility: uncounted
+format:
+  revealjs:
+    embed-resources: true
+    slide-number: true
+    theme: dracula
+editor: visual
+---
+
+## Background and aim
+
+**Data:**
+
+- ...
+
+**Backround**:
+
+- ...
+
+**Aim**:
+
+- In our project we aimed to...
+
+## Methods
+
+- Load --> Clean --> Augment --> Describe --> Analyse
+
+## Load (01_load.qmd)
+
+## Clean (02_clean.qmd)
+
+## Augment (03_augment.qmd)
+
+Added new variables describing each sample, based on the tissue code:
+
+- **Group:** Control or Patient
+- **Tissue:** Endometrium, Peritoneum or Lesion
+- **Lesion_type:** Peritoneal, Ovarian endometrioma or Deep infiltrating
+- **Lesion_subtype:** subtyping of the lesions, based on fx. the color of peritoneal lesions or the location of deep lesions
+- **Plot_group:** a descriptive label for each sample, used in the plots
+
+```r
+data_aug <- data_tissue |>
+  mutate(Group = case_when(Tissue_type == "CE" ~ "Control",
+                           Tissue_type == "CP" ~ "Control",
+                           TRUE ~ "Patient"),
+         ...) |>
+  relocate(Sample, Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group)
+```
+
+## Analysis 1 (05_analysis_1.qmd)
+
+**Relative expression = sample expression − mean of the controls**
+
+- Patients vs. controls (CE vs PE and CP vs PP)
+- Lesions vs. control endometrium
+- Top 10 genes for each comparison
+- Plots
+  - Histogram
+  - Barcharts
+  - Boxplots, shown in grid plots with `facet_wrap()`, one panel per gene
+
+## Analysis 2 (06_analysis_2.qmd)
+
+## Analysis 3 (07_analysis_3.qmd)
+
+## Results
+
+## Discussion and conclusion
+
+```{=html}
+<style>
+.reveal .slides { font-size: 28px; }
+</style>
+```
