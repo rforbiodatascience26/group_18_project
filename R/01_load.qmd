@@ -54,12 +54,12 @@ Manual check of files
 batchCN_array_combined <- read_excel(here("data/_raw/batchCN_array_combined.gz"))
 head(batchCN_array_combined)
 write_tsv(batchCN_array_combined,
-          "../data/01_batchCN_array_combined_load.tsv")
+          here("data/01_batchCN_array_combined_load.tsv"))
 ```
 
 ```{r}
 Sample_link <- read_excel(here("data/_raw/Sample_link.gz"))
 head(Sample_link)
 write_tsv(Sample_link,
-          "../data/01_Sample_link_load.tsv")
+          here("data/01_Sample_link_load.tsv"))
 ```

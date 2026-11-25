@@ -27,7 +27,7 @@ Run entire project by running this entire file.
 Only running files if their output file hasn't been created.
 
 ```{r}
-if (!dir.exists(here("data"))) {
+if (!file.exists(here("data/01_batchCN_array_combined_load.tsv"))) {
   source(purl(here("R/01_load.qmd"),
               output = tempfile(fileext = ".R"),
               quiet = TRUE))
