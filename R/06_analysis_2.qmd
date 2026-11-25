@@ -16,6 +16,7 @@ Load libraries
 ```{r}
 library("tidyverse")
 library("here")
+library("broom")
 ```
 
 Load data from 03_data_aug.tsv
@@ -74,4 +75,79 @@ subtype_diffs <- peri_data_long |>
   arrange(Lesion_subtype, p_value)
 
 subtype_diffs
+```
+
+```{r}
+subtype_diffs <- peri_data_long |>
+  filter(Group == "Patient", Lesion_subtype %in% c("Red", "White", "Black")) |>
+  left_join(control_vals, by = "Gene") |> 
+  group_by(Lesion_subtype, Gene) |>
+  mutate(model_object = map(.x = data,
+                            .f = ~lm(formula = Expression - control_expr ~ Gene,
+                                     data = .x)
+  ) 
+  )
+
+subtype_diffs
+```
+
+```{r}
+peri_data_long |> 
+  select(Sample, Group, Gene, Expression) |> 
+  group_by(Gene, Group) |> 
+  summarize(mean_ex = mean(Expression)) |>  
+  ungroup() |> 
+  pivot_wider(names_from = Group,
+              values_from = mean_ex) |> 
+  mutate(diff = Patient - Control)
+
+
+```
+
+```{r}
+peri_data_long |> 
+  select(Sample, Group, Gene, Expression) |> 
+  group_by(Gene, Group) |> 
+  summarize(mean_ex = mean(Expression)) |>  
+  ungroup() |> 
+  pivot_wider(names_from = Group,
+              values_from = mean_ex) |> 
+  mutate(diff = Patient - Control) |> 
+  group_by(Gene) |> 
+  nest() |> 
+  mutate(model_object = map(.x = data,
+                            .f = ~lm(formula = diff ~ Gene,
+                                     data = .x)
+  ) 
+  )
+
+```
+
+```{r}
+peri_data_long |> 
+  select(Sample, Group, Gene, Expression) |> 
+  group_by(Gene) |> 
+  nest() |> 
+  mutate(model_object = map(.x = data,
+                            .f = ~ lm(Expression ~ Group, data = .x)),
+         model_object_tidy = map(.x = model_object,
+                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
+  filter(Gene == "A1BG") |> 
+  unnest(cols = model_object_tidy) |> 
+  select(-data, -model_object)
+```
+
+```{r}
+peri_data_long |> 
+  select(Sample, Group, Gene, Expression) |> 
+  group_by(Gene) |> 
+  nest() |> 
+  mutate(model_object = map(.x = data,
+                            .f = ~ lm(Expression ~ Group, data = .x)),
+         model_object_tidy = map(.x = model_object,
+                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
+  unnest(cols = model_object_tidy) |> 
+  filter(term == "GroupPatient") |> 
+  mutate(p_adj = p.adjust(p.value, method = "BH")) |> 
+  select(-data, -model_object)
 ```
