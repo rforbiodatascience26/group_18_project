@@ -15,21 +15,21 @@ editor: visual
 
 **Backround**:
 
-- ...
+-   ...
 
 **Aim**:
 
-- In our project we aimed to...
+-   In our project we aimed to...
 
 ## Materials and Methods
 
 **Data:**
 
-- ...
+-   ...
 
 **Workflow:**
 
-- Load --> Clean --> Augment --> Describe --> Analyse
+-   Load --\> Clean --\> Augment --\> Describe --\> Analyse
 
 ## Load (01_load.qmd)
 
@@ -39,13 +39,13 @@ editor: visual
 
 Added new variables describing each sample, based on the tissue code:
 
-- **Group:** Control or Patient
-- **Tissue:** Endometrium, Peritoneum or Lesion
-- **Lesion_type:** Peritoneal, Ovarian endometrioma or Deep infiltrating
-- **Lesion_subtype:** subtyping of the lesions, based on fx. the color of peritoneal lesions or the location of deep lesions
-- **Plot_group:** a descriptive label for each sample, used in the plots
+-   **Group:** Control or Patient
+-   **Tissue:** Endometrium, Peritoneum or Lesion
+-   **Lesion_type:** Peritoneal, Ovarian endometrioma or Deep infiltrating
+-   **Lesion_subtype:** subtyping of the lesions, based on fx. the color of peritoneal lesions or the location of deep lesions
+-   **Plot_group:** a descriptive label for each sample, used in the plots
 
-```r
+``` r
 data_aug <- data_tissue |>
   mutate(Group = case_when(Tissue_type == "CE" ~ "Control",
                            Tissue_type == "CP" ~ "Control",
@@ -54,19 +54,25 @@ data_aug <- data_tissue |>
   relocate(Sample, Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group)
 ```
 
-## Desrcibe (04_describe.qmd)
+## Describe (04_describe.qmd)
+
+Number of sample in each tissue type (col)
+
+mean gene expression across different samples boxplot
+
+Standard deviation of gene expression within different tissue type (col)
 
 ## Analysis 1 (05_analysis_1.qmd)
 
 **Relative expression = sample expression − mean of the controls**
 
-- Patients vs. controls (CE vs PE and CP vs PP)
-- Lesions vs. control endometrium
-- Top 10 genes for each comparison
-- Plots
-  - Histogram
-  - Barcharts
-  - Boxplots, shown in grid plots with `facet_wrap()`, one panel per gene
+-   Patients vs. controls (CE vs PE and CP vs PP)
+-   Lesions vs. control endometrium
+-   Top 10 genes for each comparison
+-   Plots
+    -   Histogram
+    -   Barcharts
+    -   Boxplots, shown in grid plots with `facet_wrap()`, one panel per gene
 
 ## Analysis 2 (06_analysis_2.qmd)
 
