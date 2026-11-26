@@ -74,11 +74,11 @@ top_var_genes <- sd_table |>
 
 # 
 data_long |>        
-  semi_join(top_var_genes, by = c("Gene", "Tissue")) |>
+  semi_join(top_var_genes, join_by(Gene, Tissue)) |>
   ggplot(aes(x = Group, y = Expression, colour = Group)) +
   geom_jitter(width = 0.15, height = 0) + 
   facet_wrap(Tissue ~ Gene, scales = "free_y") +
-  theme_bw() 
+  theme_bw()
 ```
 
 ```{r}
@@ -99,10 +99,19 @@ data_aug |> count(Tissue, Tissue_type, Lesion_type, Plot_group) |> filter(Tissue
 
 We are therefore no sure that we can only look at lesions when comparing lesion types
 
+tRYING TO COMPARE ALL A TONCE:
+
+```{r}
+data_long |>
+  semijoin(top_var_gene 
+          
+           )
+```
+
 ```{r}
 data_long |>
   filter(Tissue == "Lesion")|>
-  semi_join(top_var_genes |> distinct(Gene), by = "Gene") |>
+  semi_join(top_var_genes |> distinct(Gene), join_by(Gene)) |>
     ggplot(aes(x = Lesion_type, y = Expression, colour = Lesion_type)) +
     geom_jitter(width = 0.15, height = 0) +
     facet_wrap(~ Gene, scales = "free_y") +
@@ -110,20 +119,4 @@ data_long |>
     theme(axis.text.x = element_blank())
 ```
 
-```{r}
-data_long |>
-  filter(Tissue == "Lesion",
-         !is.na(Lesion_subtype)) |>
-  semi_join(top_var_genes |> distinct(Gene), by = "Gene") |>
-  ggplot(aes(x = Lesion_subtype, y = Expression, colour = Lesion_type)) +
-  geom_jitter(width = 0.15, height = 0) +
-  facet_wrap(~ Gene, scales = "free_y") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-```{# test area}
-data_long |>
-  filter(!is.na(Lesion_subtype)) |>
-  distinct(Lesion_subtype)
-```
+`{# test area} data_long |>   filter(!is.na(Lesion_subtype)) |>   distinct(Lesion_subtype)`
