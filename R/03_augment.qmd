@@ -9,7 +9,7 @@ editor: visual
 Later in the analysis we would like to stratify based on tissue types, and patient vs control. Therefore we add variables describing this.
 
 Input file: `02_dat_clean.tsv`\
-Output file: `03_dat_aug.tsv`
+Output file: `03_dat_aug.tsv` , `03_dat_long.tsv`
 
 ## Libraries
 
