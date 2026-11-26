@@ -29,8 +29,12 @@ data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
 ```
 
 ```{r}
+data_aug
+```
+
+```{r}
 data_long <- data_aug |>
-  pivot_longer(cols = -c(Sample, Tissue_type, Group, Tissue, Lesion_type, Plot_group),
+  pivot_longer(cols = -c(Sample, Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group),
                names_to = "Gene",
                values_to = "Expression")
 head(data_long)
@@ -77,6 +81,10 @@ data_long |>
   theme_bw() 
 ```
 
+```{r}
+top_var_genes
+```
+
 This is interesting! one case - GSTT1 in peretonium - isn't just signficiant in terms... We still don't know about the leisures however. As these don't have control groups we can't compare them against patients. We can however look at another parameter: leisure type which we assume to be abundant in both other endometrium and peritoneum. we double checked below to be sure
 
 ```{r}
@@ -93,16 +101,29 @@ We are therefore no sure that we can only look at lesions when comparing lesion 
 
 ```{r}
 data_long |>
-  filter(Tissue == "Lesion",
-         Gene %in% top_var_genes$Gene) |>
-  ggplot(aes(x = Lesion_type, y = Expression, colour = Lesion_type)) +
-  geom_jitter(width = 0.15, height = 0) +
-  facet_wrap(~ Gene, scales = "free_y") +
-  theme_bw() +
-  theme(axis.text.x = element_blank()
+  filter(Tissue == "Lesion")|>
+  semi_join(top_var_genes |> distinct(Gene), by = "Gene") |>
+    ggplot(aes(x = Lesion_type, y = Expression, colour = Lesion_type)) +
+    geom_jitter(width = 0.15, height = 0) +
+    facet_wrap(~ Gene, scales = "free_y") +
+      theme_bw() +
+    theme(axis.text.x = element_blank())
 ```
 
 ```{r}
 data_long |>
-  
+  filter(Tissue == "Lesion",
+         !is.na(Lesion_subtype)) |>
+  semi_join(top_var_genes |> distinct(Gene), by = "Gene") |>
+  ggplot(aes(x = Lesion_subtype, y = Expression, colour = Lesion_type)) +
+  geom_jitter(width = 0.15, height = 0) +
+  facet_wrap(~ Gene, scales = "free_y") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{# test area}
+data_long |>
+  filter(!is.na(Lesion_subtype)) |>
+  distinct(Lesion_subtype)
 ```
