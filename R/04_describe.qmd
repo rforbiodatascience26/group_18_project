@@ -42,11 +42,20 @@ overview_table |>
 In this graph we show the numbers of sample to each tissue type. We see that for tissue PE the amount of sample is much bigger
 
 ```{r}
-data_aug |>
-  count(Tissue_type) |>
-  ggplot(aes(x = Tissue_type, y = n)) +
-  geom_col(fill = "blue") +
+tissue_dist <- data_aug |>
+  count(Plot_group) |>
+  mutate(
+    Plot_group = factor(Plot_group,
+                        levels = c("Control endometrium", "Patient endometrium", "Control peritoneum", "Patient peritoneum","Ovarian endometrioma", "Deep infiltrating", "Peritoneal lesion"))
+  ) |> 
+  ggplot(aes(x = Plot_group, y = n, fill = Plot_group)) +
+  geom_col(width = 0.6, show.legend = FALSE) +
   theme_classic() +
+  scale_fill_manual(values = c(
+    "blue", "blue",
+    "red", "red",
+    "coral", "purple", "goldenrod"
+  )) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)
   ) +
@@ -55,20 +64,32 @@ data_aug |>
     x = "Tissue type",
     y = "Number of samples"
   )
+
+ggsave(here("results/04_tissue_dist.png"),
+       plot = tissue_dist,
+       width = 8,
+       height = 6,
+       dpi = 300)
+
+tissue_dist
 ```
 
 Here is a boxplot matched with the previous graph of amount of sample in each tissue. we see here that even though it is a nice boxplot for tissue DiEB there is only three observation so data analysis on this point is not a good idea.
 
 ```{r}
 sample_stats <- data_long |>
-  group_by(Sample, Tissue_type) |>
+  group_by(Sample, Plot_group) |>
+   mutate(
+    Plot_group = factor(Plot_group,
+                        levels = c("Control endometrium", "Patient endometrium", "Control peritoneum", "Patient peritoneum","Ovarian endometrioma", "Deep infiltrating", "Peritoneal lesion"))
+  ) |> 
   summarise(
     Mean_expression = mean(Expression),
     SD_expression = sd(Expression),
     .groups = "drop"
   )
 sample_stats |>
-  ggplot(aes(x = Tissue_type, y = Mean_expression)) +
+  ggplot(aes(x = Plot_group, y = Mean_expression)) +
   geom_boxplot(fill = "red") +
   geom_jitter(width = 0.15, alpha = 0.4) +
   theme_classic() +
@@ -80,6 +101,44 @@ sample_stats |>
     x = "Tissue type",
     y = "Mean expression per sample"
   )
+```
+
+This is for one gene:
+
+```{r}
+ACTG2_stats <- data_long |>
+  filter(Gene == "ACTG2") |> 
+  group_by(Sample, Plot_group) |>
+   mutate(
+    Plot_group = factor(Plot_group,
+                        levels = c("Control endometrium", "Patient endometrium", "Control peritoneum", "Patient peritoneum","Ovarian endometrioma", "Deep infiltrating", "Peritoneal lesion"))
+  ) |> 
+  summarise(
+    Mean_expression = mean(Expression),
+    SD_expression = sd(Expression),
+    .groups = "drop"
+  )
+ACTG2_stats <- ACTG2_stats |>
+  ggplot(aes(x = Plot_group, y = Mean_expression)) +
+  geom_boxplot(fill = "red") +
+  geom_jitter(width = 0.15, alpha = 0.4) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  labs(
+    title = "ACTG2 gene expression across tissue types",
+    x = "Tissue type",
+    y = "Mean expression per sample"
+  )
+
+ggsave(here("results/04_ACTG2_stats.png"),
+       plot = tissue_dist,
+       width = 8,
+       height = 6,
+       dpi = 300)
+
+ACTG2_stats
 ```
 
 Investigating how many NA values in the dataset.

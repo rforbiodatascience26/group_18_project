@@ -28,7 +28,11 @@ editor: visual
 
 -   EndometDB: Database of log2 transformed mRNA expression of xx amount of genes and xx many samples of tissue and different lesion types in endometriosis patients, as well as xx samples of healthy control tissue.
 
-**Workflow:**
+\![\](results/04_tissue_dist.png)
+
+\![\](results/04_ACTG2)
+
+**Workflow**
 
 -   Load --\> Clean --\> Augment --\> Describe --\> Analyse
 
@@ -82,7 +86,7 @@ Standard deviation of gene expression within different tissue type (col)
 ## Results and discussion
 
 ```{=html}
-<style>
+SS<style>
 .reveal .slides { font-size: 28px; }
 </style>
 ```
