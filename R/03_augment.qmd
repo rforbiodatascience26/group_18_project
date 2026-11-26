@@ -89,3 +89,18 @@ data_aug |>
 write_tsv(data_aug,
           here("data/03_dat_aug.tsv"))
 ```
+
+## Save long version of augmented data
+
+```{r}
+data_long <- data_aug |>
+  pivot_longer(
+    cols = -c(Sample, Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group),
+    names_to = "Gene",
+    values_to = "Expression")
+```
+
+```{r}
+write_tsv(data_long,
+          here("data/03_dat_long.tsv"))
+```
