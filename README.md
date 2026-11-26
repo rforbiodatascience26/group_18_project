@@ -25,3 +25,9 @@ The data contains data regarding differentially expressed genes in the endometri
 Endometriosis types: Ovarian endometrioma, peritoneal endometriosis lesion, and deep infiltrating lesion also different endometriosis lesion types
 
 transcriptomic data
+
+When the data is cleaned we have:
+
+392 samples per gene.
+
+19746 genes per sample.

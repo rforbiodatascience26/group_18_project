@@ -8,9 +8,18 @@ editor: visual
 
 This file looks closer into the disctriptive data part were we look into now data is and if it fair to use it for data analysis.
 
+## Libraries
+
 ```{r}
 library("tidyverse")
 library("here")
+```
+
+## Load files
+
+```{r}
+data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
+data_long <- read_tsv(here("data/03_dat_long.tsv"))
 ```
 
 in this graph we show the numbers of sample to each tissue type. We see that for tissue PE the amount of sample is much bigger
