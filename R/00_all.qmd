@@ -17,6 +17,7 @@ library("here")
 library("readxl")
 library("knitr")
 library("broom")
+library("table1")
 ```
 
 ## Run program

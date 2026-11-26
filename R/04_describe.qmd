@@ -13,6 +13,7 @@ This file looks closer into the disctriptive data part were we look into now dat
 ```{r}
 library("tidyverse")
 library("here")
+library("table1")
 ```
 
 ## Load files
@@ -22,7 +23,23 @@ data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
 data_long <- read_tsv(here("data/03_dat_long.tsv"))
 ```
 
-in this graph we show the numbers of sample to each tissue type. We see that for tissue PE the amount of sample is much bigger
+## Investigating
+
+We first make a table1 to give an overview of our data and the samples in it
+
+```{r}
+overview_table <- data_aug |>
+  table1(x = formula(~ Tissue + Lesion_type + Lesion_subtype + Plot_group | Group),
+         data = _)
+
+overview_table
+
+overview_table |>
+  as.data.frame() |>
+  write_csv(here("results/table1.csv"))
+```
+
+In this graph we show the numbers of sample to each tissue type. We see that for tissue PE the amount of sample is much bigger
 
 ```{r}
 data_aug |>
