@@ -29,12 +29,16 @@ data_aug <- read_tsv(here("data/03_dat_aug.tsv")) |>
 
 #long format: one row per sample per gene
 data_long <- data_aug |>
-  pivot_longer(cols = -c(Sample, Tissue_type, Group, Tissue, Lesion_type, Plot_group),
+  pivot_longer(cols = -c(Sample, Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group),
                names_to = "Gene",
                values_to = "Expression")
 
 #make results folder
 dir.create(here("results"), showWarnings = FALSE)
+```
+
+```{r}
+data_long
 ```
 
 ## Plot 1: Patient vs. control in endometrium and peritoneum
