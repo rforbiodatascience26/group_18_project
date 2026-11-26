@@ -148,6 +148,85 @@ peri_data_long |>
                                  .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
   unnest(cols = model_object_tidy) |> 
   filter(term == "GroupPatient") |> 
-  mutate(p_adj = p.adjust(p.value, method = "BH")) |> 
-  select(-data, -model_object)
+  mutate(p_adj = p.adjust(p.value)) |> 
+  select(-data, -model_object) |> 
+  mutate(Significance = case_when(p_adj > 0.05 ~ "not significant",
+                                  p_adj <= 0.05 ~ "significant")) |> 
+  filter(Significance == "significant") |> 
+  arrange(desc(abs(statistic)))
+```
+
+```{r}
+peri_not_lesion_data_long <- data_aug |> 
+  filter(Tissue == "Peritoneum") |> 
+  select(-Lesion_type,-Tissue) |> 
+  pivot_longer(cols = -c(Sample, Tissue_type, Lesion_subtype, Group, Plot_group),
+               names_to = "Gene",
+               values_to = "Expression")
+peri_not_lesion_data_long
+```
+
+```{r}
+peri_not_lesion_data_long |> 
+  select(Sample, Group, Gene, Expression) |> 
+  group_by(Gene) |> 
+  nest() |> 
+  mutate(model_object = map(.x = data,
+                            .f = ~ lm(Expression ~ Group, data = .x)),
+         model_object_tidy = map(.x = model_object,
+                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
+  unnest(cols = model_object_tidy) |> 
+  filter(term == "GroupPatient") |> 
+  mutate(p_adj = p.adjust(p.value)) |> 
+  select(-data, -model_object) |> 
+  mutate(Significance = case_when(p_adj > 0.05 ~ "not significant",
+                                  p_adj <= 0.05 ~ "significant")) |> 
+  filter(Significance == "significant") |> 
+  arrange(desc(abs(estimate)))
+```
+
+```{r}
+peri_not_lesion_data_long |> 
+  select(Sample, Group, Gene, Expression) |> 
+  group_by(Gene) |> 
+  nest() |> 
+  mutate(model_object = map(.x = data,
+                            .f = ~ lm(Expression ~ Group, data = .x)),
+         model_object_tidy = map(.x = model_object,
+                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
+  unnest(cols = model_object_tidy) |> 
+  filter(term == "GroupPatient") |> 
+  mutate(p_adj = p.adjust(p.value)) |> 
+  select(-data, -model_object) |> 
+  mutate(Significance = case_when(p_adj > 0.05 ~ "not significant",
+                                  p_adj <= 0.05 ~ "significant")) |> 
+  arrange(desc(abs(estimate)))
+```
+
+```{r}
+endo_data_long <- data_aug |> 
+  filter(Tissue == "Endometrium") |> 
+  select(-Lesion_type,-Tissue) |> 
+  pivot_longer(cols = -c(Sample, Tissue_type, Lesion_subtype, Group, Plot_group),
+               names_to = "Gene",
+               values_to = "Expression")
+endo_data_long
+```
+
+```{r}
+endo_data_long |> 
+  select(Sample, Group, Gene, Expression) |> 
+  group_by(Gene) |> 
+  nest() |> 
+  mutate(model_object = map(.x = data,
+                            .f = ~ lm(Expression ~ Group, data = .x)),
+         model_object_tidy = map(.x = model_object,
+                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
+  unnest(cols = model_object_tidy) |> 
+  filter(term == "GroupPatient") |> 
+  mutate(p_adj = p.adjust(p.value)) |> 
+  select(-data, -model_object) |> 
+  mutate(Significance = case_when(p_adj > 0.05 ~ "not significant",
+                                  p_adj <= 0.05 ~ "significant")) |> 
+  arrange(desc(abs(estimate)))
 ```
