@@ -4,17 +4,21 @@ format: html
 editor: visual
 ---
 
-## Intention
-
-inputfile: 02_dat_clean.tsv outputfile(s):
-
 ## Declaration on AI
 
-For this section, AI (Claude Opus 5.5, medium effort) has been used as a sparring partner for idea generation: broadly the prompt: "what would be worth investigating in a bio data set on endometriosis across multiple samples from various patients and tissue types?" as well as "I'm trying to achieve this, is this possible without incorporating external" libraries (aside from tidyverse etc from class). this reminded me of semi_join and slice_max() which I cross-referenced with the teaching book to make sure all was within the curriculum. In making the graphs, etc AI hasn't been utilized, and code **hasn**'t been copied from AI, although it has been copied from other parts of the project including from other contributing members. Theme_bw() was deemed to be the optimal theme for the graphs after initial creation by the assistance of AI.
+For this section, AI (Claude Opus 5.5, medium effort) has been used as a sparring partner for idea generation: broadly the prompt: "what would be worth investigating in a bio data set on endometriosis across multiple samples from various patients and tissue types?" as well as "Without writing any code, please answer the following: I'm trying to achieve *goal*, is this possible without incorporating external" libraries (aside from tidyverse etc from class). this reminded me of semi_join() and slice_max() which I cross-referenced with the teaching book to make sure all was within the curriculum. In making the graphs, etc AI hasn't been utilized, and code **hasn**'t been copied from AI, although it has been copied from other parts of the project including from other contributing members. Theme_bw() was deemed to be the optimal theme for the graphs after initial creation by the assistance of AI. After uploading a picture of the first graph with the classic theme which I found to be suboptimal.
+
+Furthermore, I learnt some stuff from saerching the web such as further instructions and clarification for semi_join(). Here, AI wasn't used directly by me but may have played a part in websites etc.
 
 Patient-to-patient variability Instead of mean differences, compare the spread: do patients vary more than controls? Calculate the standard deviation per gene per group with summarise(sd = sd(Expression)) and plot patient SD against control SD. Genes where patients are much more variable might point to subgroups of patients. there are different kinds of patients, for example different disease subtypes, stages or responses to treatment.
 
 A high spread (standard deviation) in patients but not in controls is how you'd spot this. You'd then look at the actual values with geom_jitter() to see whether they really split into groups or just have one extreme patient.
+
+## Intention
+
+inputfile: 02_dat_clean.tsv outputfile(s):
+
+The core idea is to investigate if the dataset genes where the expression varies more for patient groups than for the control groups. This wouldn't necessarily hint at contamination but could indicate that some factors are worth taking into account and exploring more. To avoid cluttered data, the jitter position wsa chosen.
 
 ## Data analysis
 
@@ -22,7 +26,9 @@ To prepare for plotting we convert to long data. The data is filtered later on a
 
 ```{r}
 data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
+```
 
+```{r}
 data_long <- data_aug |>
   pivot_longer(cols = -c(Sample, Tissue_type, Group, Tissue, Lesion_type, Plot_group),
                names_to = "Gene",
@@ -30,7 +36,7 @@ data_long <- data_aug |>
 head(data_long)
 ```
 
-Lesions don't have control groups. Therefore, we skip looking at these for now and retrieve relevant cols
+Lesions don't have control groups. Therefore, we skip looking at these for now and retrieve relevant cols and std_devs for each group and tissue
 
 ```{r}
 sd_table <- data_long |> 
@@ -41,6 +47,8 @@ sd_table <- data_long |>
 sd_table
 ```
 
+Prepare for std_devs for plotting
+
 ```{r}
 # shouldn't run more than once. therefore seperate coding block
 sd_table <- sd_table |> 
@@ -48,17 +56,53 @@ sd_table <- sd_table |>
 ```
 
 ```{r}
+sd_table
+```
+
+Select the top 10 genes with the largest difference where patietns vary more than control groups and plot their expression for each group .
+
+```{r}
 # top genes accordiing to var instead of mean
 top_var_genes <- sd_table |>
-  mutate(SD_diff = Patient - Control) |>
+  mutate(SD_diff = Patient - Control) |>  # only positive when patients vary more than controls
   group_by(Tissue) |>
-  slice_max(SD_diff, n = 10)
+  slice_max(SD_diff, n = 10)              # 10 genes with largest increase for each remaining tissue type
 
 # 
-data_long |>
+data_long |>        
   semi_join(top_var_genes, by = c("Gene", "Tissue")) |>
   ggplot(aes(x = Group, y = Expression, colour = Group)) +
   geom_jitter(width = 0.15, height = 0) + 
   facet_wrap(Tissue ~ Gene, scales = "free_y") +
   theme_bw() 
+```
+
+This is interesting! one case - GSTT1 in peretonium - isn't just signficiant in terms... We still don't know about the leisures however. As these don't have control groups we can't compare them against patients. We can however look at another parameter: leisure type which we assume to be abundant in both other endometrium and peritoneum. we double checked below to be sure
+
+```{r}
+data_aug |> count(Tissue, Tissue_type, Lesion_type, Plot_group)
+```
+
+As the peritoneum isn't to be seen and page 2 doesn't work i filtered for those manually
+
+```{r}
+data_aug |> count(Tissue, Tissue_type, Lesion_type, Plot_group) |> filter(Tissue == "Peritoneum")
+```
+
+We are therefore no sure that we can only look at lesions when comparing lesion types
+
+```{r}
+data_long |>
+  filter(Tissue == "Lesion",
+         Gene %in% top_var_genes$Gene) |>
+  ggplot(aes(x = Lesion_type, y = Expression, colour = Lesion_type)) +
+  geom_jitter(width = 0.15, height = 0) +
+  facet_wrap(~ Gene, scales = "free_y") +
+  theme_bw() +
+  theme(axis.text.x = element_blank()
+```
+
+```{r}
+data_long |>
+  
 ```
