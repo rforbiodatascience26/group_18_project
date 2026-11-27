@@ -7,37 +7,40 @@ format:
   revealjs:
     embed-resources: true
     slide-number: true
-    theme: dracula
+    theme: dark
 editor: visual
 ---
 
 ## Introduction
 
+::::: columns
+::: {.column width="50%"}
 **Background**:
 
--   Endometriosis is a chronic, inflammatory, estrogen-driven disease where lesions (endometrium-like tissue) grow outside of the uterus.
--   The cause of endometriosis is unknown - that's why we choose to investigate the gene expression profiles of disease tissue and compare it to healthy tissue.
+-   Endometriosis is a chronic, inflammatory, estrogen-driven disease
+-   Lesions (endometrium-like tissue) grow outside of the uterus.
+-   The cause of endometriosis is unknown
 
 **Aim**:
 
--   In our project we aimed to identify differences in gene expression profiles for endometrium, peritoneum and lesion tissue for endometriosis patients and compare them to healthy tissue gene profiles.
+-   We aimed to identify differences in gene expression profiles for endometrium, peritoneum and lesion tissue for endometriosis patients and compare them to healthy tissue gene profiles.
+:::
 
-![](images/peritoneum.jpg){width="411"}
-
-## ![](images/uterus.jpg){width="345"}
+::: {.column width="50%"}
+![Uterus](images/uterus.jpg){style="max-height: 45vh; width: auto;"} ![Peritoneum](images/peritoneum.jpg){style="max-height: 55vh; width: auto;"}
+:::
+:::::
 
 ## Materials and Methods
 
-**Data:**
+EndometDB: Database of log2-transformed mRNA expression of \~20,000 genes and \~28,000 probes across 330 patient samples and 62 control samples.
 
--   EndometDB: Database of log2 transformed mRNA expression of xx amount of genes and xx many samples of tissue and different lesion types in endometriosis patients, as well as xx samples of healthy control tissue.
-
-    ![](images/04_tissue_dist.png){width="434"}
-
-**Workflow**
-
--   Loaded xlsx file and transformed it to tsv file
--   --\> Clean --\> Augment --\> Describe --\> Analyse
+-   **From probes to samples:** Average expression of probes mapping to the same gene and tissue
+-   **Tidying & augmenting:** Reshaped to samples as rows, genes as variables; added clinical/tissue labels (patient/control, tissue type, lesion type)
+-   **Analysis pipeline:**
+    -   1: Computed control-relative expression and found the genes most different from controls
+    -   2: Found out if the difference was significant
+    -   3: Looked at the spread
 
 ## Describe
 
