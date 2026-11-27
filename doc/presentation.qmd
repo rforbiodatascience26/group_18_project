@@ -22,21 +22,22 @@ editor: visual
 
 -   In our project we aimed to identify differences in gene expression profiles for endometrium, peritoneum and lesion tissue for endometriosis patients and compare them to healthy tissue gene profiles.
 
+![](images/peritoneum.jpg){width="411"}
+
+## ![](images/uterus.jpg){width="345"}
+
 ## Materials and Methods
 
 **Data:**
 
 -   EndometDB: Database of log2 transformed mRNA expression of xx amount of genes and xx many samples of tissue and different lesion types in endometriosis patients, as well as xx samples of healthy control tissue.
 
-\![\](results/04_tissue_dist.png)
-
-\![\](results/04_ACTG2)
+    ![](images/04_tissue_dist.png){width="434"}
 
 **Workflow**
 
--   Load --\> Clean --\> Augment --\> Describe --\> Analyse
-
-## Materials and Methods
+-   Loaded xlsx file and transformed it to tsv file
+-   --\> Clean --\> Augment --\> Describe --\> Analyse
 
 ## Describe
 
