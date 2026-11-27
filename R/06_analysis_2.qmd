@@ -6,227 +6,166 @@ editor: visual
 
 ## Intention
 
-input file: 03_dat_aug.tsv\
-outputfile: 06_key_plot_3.png
+Input file: 03_dat_aug.tsv\
+Output file: 06_key_plot_3.png
 
 We want to look at the peritoneal lesions and if there is a difference in gene expressions for the different subtypes compared to the controls.
 
-Load libraries
+## Load libraries
 
 ```{r}
 library("tidyverse")
 library("here")
 library("broom")
+library(ggplot2)
 ```
 
-Load data from 03_data_aug.tsv
+## Load data
 
 ```{r}
 data_aug <- read_tsv(here("data/03_dat_aug.tsv"))
+data_long <- read_tsv(here("data/03_dat_long.tsv"))
 ```
 
+## Functions
+
+Creating a function that models our data and finds if differences between patient and control are statistically significant.
+
 ```{r}
-data_aug
+stat_model <- function(data) {
+  data |> 
+    select(Sample, Group, Gene, Expression) |> 
+    group_by(Gene) |> 
+    nest() |> 
+    mutate(model_object = map(.x = data,
+                              .f = ~ lm(Expression ~ Group, data = .x)),
+           model_object_tidy = map(.x = model_object,
+                                   .f = ~ tidy(
+                                     .x, 
+                                     conf.int = TRUE, 
+                                     conf.level = 0.95))) |>
+    unnest(cols = model_object_tidy) |> 
+    filter(term == "GroupPatient") |> 
+    mutate(p_adj = p.adjust(p.value)) |> 
+    select(-data, -model_object, -term) |> 
+    mutate(Significance = case_when(p_adj > 0.05 ~ "Not significant",
+                                    p_adj <= 0.05 ~ "Significant")) |> 
+    relocate(Gene, estimate, p.value, p_adj, Significance) |> 
+    arrange(desc(abs(estimate)))
+}
 ```
 
-Selecting data regarding peritoneal lesions and the control group "Control peritoneum"
+Pie chart function.
 
 ```{r}
-peri_data_long <- data_aug |> 
+pie_maker <- function(data) {
+  ggplot(data, aes(
+    x = "",
+    y = n,
+    fill = Significance)) +
+    geom_bar(
+      alpha = 0.5,
+      stat = "identity",
+      width=1, 
+      color="white") +
+    coord_polar("y",
+                start = 0) +
+    theme_void()
+}
+```
+
+## Analysis
+
+Selecting data regarding peritoneal lesions.
+
+```{r}
+peri_lesion_long <- data_long |> 
   filter(Lesion_type == "Peritoneal lesion" |
-           (Group == "Control" & Tissue == "Peritoneum")
-  ) |> 
-  select(-Lesion_type,-Tissue) |> 
-  pivot_longer(cols = -c(Sample, Tissue_type, Lesion_subtype, Group, Plot_group),
-               names_to = "Gene",
-               values_to = "Expression")
+           (Group == "Control" & Tissue == "Peritoneum")) |> 
+  select(-Lesion_type,-Tissue, -Plot_group)
+peri_lesion_long
+
+```
+
+Finding the difference between gene expression in the control group vs. the patient sub types, and using a model to find out if it is statistically significant.
+
+```{r}
+peri_lesion_model <- stat_model(peri_lesion_long)
+peri_lesion_model
+```
+
+```{r}
+peri_lesion_summary <- peri_lesion_model |> 
+  ungroup() |> 
+  group_by(Significance) |> 
+  summarise(n = n())
+peri_lesion_summary
+```
+
+```{r}
+pie_maker(peri_lesion_summary) +
+  labs(
+    title = "Significant difference between control and patient",
+    subtitle = "Peritoneal lesions"
+  )
+```
+
+Now looking at data regarding more general peritoneum tissue.
+
+```{r}
+peri_data_long <- data_long |> 
+  filter(Tissue == "Peritoneum") |> 
+  select(-Lesion_type,-Tissue, -Plot_group)
 peri_data_long
 ```
 
-Making a tibble of control values for the genes
-
 ```{r}
-control_vals <- peri_data_long |>
-  filter(Group == "Control") |>
-  select(Gene, control_expr = Expression)
-control_vals
+peri_model <- stat_model(peri_data_long)
+peri_model
 ```
 
 ```{r}
-
-```
-
-Finding the difference between gene expression in the control group vs. the patient subtypes.
-
-```{r}
-subtype_diffs <- peri_data_long |>
-  filter(Group == "Patient", Lesion_subtype %in% c("Red", "White", "Black")) |>
-  left_join(control_vals, by = "Gene") |> 
-  group_by(Lesion_subtype, Gene) |>
-  summarise(
-    subtype_mean = mean(Expression, na.rm = TRUE),
-    control_expr = first(control_expr),
-    log2_ = abs(subtype_mean - control_expr),
-    p_value = t.test(Expression, mu = first(control_expr))$p.value,
-    stderror = t.test(Expression, mu = first(control_expr))$stderr,
-    dof =  t.test(Expression, mu = first(control_expr))$parameter,
-    .groups = "drop"
-  ) |>
-  arrange(Lesion_subtype, p_value)
-
-subtype_diffs
-```
-
-```{r}
-subtype_diffs <- peri_data_long |>
-  filter(Group == "Patient", Lesion_subtype %in% c("Red", "White", "Black")) |>
-  left_join(control_vals, by = "Gene") |> 
-  group_by(Lesion_subtype, Gene) |>
-  mutate(model_object = map(.x = data,
-                            .f = ~lm(formula = Expression - control_expr ~ Gene,
-                                     data = .x)
-  ) 
-  )
-
-subtype_diffs
-```
-
-```{r}
-peri_data_long |> 
-  select(Sample, Group, Gene, Expression) |> 
-  group_by(Gene, Group) |> 
-  summarize(mean_ex = mean(Expression)) |>  
+peri_summary <- peri_model |> 
   ungroup() |> 
-  pivot_wider(names_from = Group,
-              values_from = mean_ex) |> 
-  mutate(diff = Patient - Control)
-
-
+  group_by(Significance) |> 
+  summarise(n = n())
+peri_summary
 ```
 
 ```{r}
-peri_data_long |> 
-  select(Sample, Group, Gene, Expression) |> 
-  group_by(Gene, Group) |> 
-  summarize(mean_ex = mean(Expression)) |>  
-  ungroup() |> 
-  pivot_wider(names_from = Group,
-              values_from = mean_ex) |> 
-  mutate(diff = Patient - Control) |> 
-  group_by(Gene) |> 
-  nest() |> 
-  mutate(model_object = map(.x = data,
-                            .f = ~lm(formula = diff ~ Gene,
-                                     data = .x)
-  ) 
+pie_maker(peri_summary) +
+  labs(
+    title = "Significant difference between control and patient",
+    subtitle = "Peritoneum tissue"
   )
-
 ```
 
-```{r}
-peri_data_long |> 
-  select(Sample, Group, Gene, Expression) |> 
-  group_by(Gene) |> 
-  nest() |> 
-  mutate(model_object = map(.x = data,
-                            .f = ~ lm(Expression ~ Group, data = .x)),
-         model_object_tidy = map(.x = model_object,
-                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
-  filter(Gene == "A1BG") |> 
-  unnest(cols = model_object_tidy) |> 
-  select(-data, -model_object)
-```
+Doing the same for endometrium tissue.
 
 ```{r}
-peri_data_long |> 
-  select(Sample, Group, Gene, Expression) |> 
-  group_by(Gene) |> 
-  nest() |> 
-  mutate(model_object = map(.x = data,
-                            .f = ~ lm(Expression ~ Group, data = .x)),
-         model_object_tidy = map(.x = model_object,
-                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
-  unnest(cols = model_object_tidy) |> 
-  filter(term == "GroupPatient") |> 
-  mutate(p_adj = p.adjust(p.value)) |> 
-  select(-data, -model_object) |> 
-  mutate(Significance = case_when(p_adj > 0.05 ~ "not significant",
-                                  p_adj <= 0.05 ~ "significant")) |> 
-  filter(Significance == "significant") |> 
-  arrange(desc(abs(statistic)))
-```
-
-```{r}
-peri_not_lesion_data_long <- data_aug |> 
-  filter(Tissue == "Peritoneum") |> 
-  select(-Lesion_type,-Tissue) |> 
-  pivot_longer(cols = -c(Sample, Tissue_type, Lesion_subtype, Group, Plot_group),
-               names_to = "Gene",
-               values_to = "Expression")
-peri_not_lesion_data_long
-```
-
-```{r}
-peri_not_lesion_data_long |> 
-  select(Sample, Group, Gene, Expression) |> 
-  group_by(Gene) |> 
-  nest() |> 
-  mutate(model_object = map(.x = data,
-                            .f = ~ lm(Expression ~ Group, data = .x)),
-         model_object_tidy = map(.x = model_object,
-                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
-  unnest(cols = model_object_tidy) |> 
-  filter(term == "GroupPatient") |> 
-  mutate(p_adj = p.adjust(p.value)) |> 
-  select(-data, -model_object) |> 
-  mutate(Significance = case_when(p_adj > 0.05 ~ "not significant",
-                                  p_adj <= 0.05 ~ "significant")) |> 
-  filter(Significance == "significant") |> 
-  arrange(desc(abs(estimate)))
-```
-
-```{r}
-peri_not_lesion_data_long |> 
-  select(Sample, Group, Gene, Expression) |> 
-  group_by(Gene) |> 
-  nest() |> 
-  mutate(model_object = map(.x = data,
-                            .f = ~ lm(Expression ~ Group, data = .x)),
-         model_object_tidy = map(.x = model_object,
-                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
-  unnest(cols = model_object_tidy) |> 
-  filter(term == "GroupPatient") |> 
-  mutate(p_adj = p.adjust(p.value)) |> 
-  select(-data, -model_object) |> 
-  mutate(Significance = case_when(p_adj > 0.05 ~ "not significant",
-                                  p_adj <= 0.05 ~ "significant")) |> 
-  arrange(desc(abs(estimate)))
-```
-
-```{r}
-endo_data_long <- data_aug |> 
+endo_data_long <- data_long |> 
   filter(Tissue == "Endometrium") |> 
-  select(-Lesion_type,-Tissue) |> 
-  pivot_longer(cols = -c(Sample, Tissue_type, Lesion_subtype, Group, Plot_group),
-               names_to = "Gene",
-               values_to = "Expression")
+  select(-Lesion_type,-Tissue, -Plot_group)
 endo_data_long
 ```
 
 ```{r}
-endo_data_long |> 
-  select(Sample, Group, Gene, Expression) |> 
-  group_by(Gene) |> 
-  nest() |> 
-  mutate(model_object = map(.x = data,
-                            .f = ~ lm(Expression ~ Group, data = .x)),
-         model_object_tidy = map(.x = model_object,
-                                 .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95))) |>
-  unnest(cols = model_object_tidy) |> 
-  filter(term == "GroupPatient") |> 
-  mutate(p_adj = p.adjust(p.value)) |> 
-  select(-data, -model_object) |> 
-  mutate(Significance = case_when(p_adj > 0.05 ~ "not significant",
-                                  p_adj <= 0.05 ~ "significant")) |> 
-  arrange(desc(abs(estimate)))
+endo_model <- stat_model(endo_data_long)
+endo_model
+```
+
+```{r}
+endo_summary <- endo_model |> 
+  ungroup() |> 
+  group_by(Significance) |> 
+  summarise(n = n())
+endo_summary
+```
+
+```{r}
+pie_maker(endo_summary) +
+  labs(
+    title = "Significant difference between control and patient",
+    subtitle = "Endometrium tissue"
+  )
 ```
