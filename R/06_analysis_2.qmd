@@ -6,10 +6,9 @@ editor: visual
 
 ## Intention
 
-Input file: 03_dat_aug.tsv\
-Output file: 06_key_plot_3.png
+Input files: `03_dat_aug.tsv`, `03_dat_long.tsv`
 
-We want to look at the peritoneal lesions and if there is a difference in gene expressions for the different subtypes compared to the controls.
+To model the difference in gene expressions between patient and control and see if it is statistically significant in different tissue types and lesions.
 
 ## Load libraries
 
@@ -76,6 +75,8 @@ pie_maker <- function(data) {
 
 ## Analysis
 
+#### Peritoneal lesions
+
 Selecting data regarding peritoneal lesions.
 
 ```{r}
@@ -110,6 +111,8 @@ pie_maker(peri_lesion_summary) +
   )
 ```
 
+#### Peritoneum tissue
+
 Now looking at data regarding more general peritoneum tissue.
 
 ```{r}
@@ -140,6 +143,8 @@ pie_maker(peri_summary) +
   )
 ```
 
+#### Endometrium tissue
+
 Doing the same for endometrium tissue.
 
 ```{r}
@@ -167,5 +172,67 @@ pie_maker(endo_summary) +
   labs(
     title = "Significant difference between control and patient",
     subtitle = "Endometrium tissue"
+  )
+```
+
+#### Ovarian endometrioma
+
+```{r}
+OE_lesion_long <- data_long |> 
+  filter(Lesion_type == "Ovarian endometrioma" |
+           (Group == "Control" & Tissue == "Endometrium")) |> 
+  select(-Lesion_type,-Tissue, -Plot_group)
+OE_lesion_long
+```
+
+```{r}
+OE_lesion_long_model <- stat_model(OE_lesion_long)
+OE_lesion_long_model
+```
+
+```{r}
+OE_lesion_long_summary <- OE_lesion_long_model |> 
+  ungroup() |> 
+  group_by(Significance) |> 
+  summarise(n = n())
+OE_lesion_long_summary
+```
+
+```{r}
+pie_maker(OE_lesion_long_summary) +
+  labs(
+    title = "Significant difference between control and patient",
+    subtitle = "Ovarian endometrioma lesions"
+  )
+```
+
+#### Deep infiltrating
+
+```{r}
+DI_lesion_long <- data_long |> 
+  filter(Lesion_type == "Deep infiltrating" |
+           (Group == "Control" & Tissue == "Endometrium")) |> 
+  select(-Lesion_type,-Tissue, -Plot_group)
+DI_lesion_long
+```
+
+```{r}
+DI_lesion_long_model <- stat_model(DI_lesion_long)
+DI_lesion_long_model
+```
+
+```{r}
+DI_lesion_long_summary <- DI_lesion_long_model |> 
+  ungroup() |> 
+  group_by(Significance) |> 
+  summarise(n = n())
+DI_lesion_long_summary
+```
+
+```{r}
+pie_maker(DI_lesion_long_summary) +
+  labs(
+    title = "Significant difference between control and patient",
+    subtitle = "Deep infiltrating lesions"
   )
 ```
