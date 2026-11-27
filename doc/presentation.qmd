@@ -44,11 +44,18 @@ EndometDB: Database of log2-transformed mRNA expression of \~20,000 genes and \~
 
 ## Describe
 
-Number of sample in each tissue type (col)
+::::: columns
+::: {.column width="50%"}
+![](images/04_tissue_dist.png){style="max-height: 55vh; width: auto;"}
+![](images/04_gene_sd_histogram.png){style="max-height: 40vh; width: auto;"}
 
-mean gene expression across different samples boxplot
+:::
 
-Standard deviation of gene expression within different tissue type (col)
+::: {.column width="50%"}
+ ![](images/04_mean_expression_across_samples.png){width="541"}
+:::
+:::::
+
 
 ## Analysis 1 - Plotting - 1/2
 
