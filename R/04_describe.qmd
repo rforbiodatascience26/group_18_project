@@ -39,7 +39,7 @@ overview_table |>
   write_csv(here("results/table1.csv"))
 ```
 
-In this graph we show the numbers of sample to each tissue type. We see that for tissue PE the amount of sample is much bigger
+In this graph we show the numbers of sample to each tissue type. We see that for tissue patient endometrium the amount of sample is much bigger
 
 ```{r}
 tissue_dist <- data_aug |>
@@ -88,7 +88,7 @@ sample_stats <- data_long |>
     SD_expression = sd(Expression),
     .groups = "drop"
   )
-sample_stats |>
+mean_expression_across_samples <- sample_stats |>
   ggplot(aes(x = Plot_group, y = Mean_expression)) +
   geom_boxplot(fill = "red") +
   geom_jitter(width = 0.15, alpha = 0.4) +
@@ -101,6 +101,12 @@ sample_stats |>
     x = "Tissue type",
     y = "Mean expression per sample"
   )
+ggsave(here("results/04_mean_expression_across_samples.png"),
+       plot = mean_expression_across_samples,
+       width = 8,
+       height = 6,
+       dpi = 300)
+
 ```
 
 Investigating how many NA values in the dataset.
@@ -130,7 +136,7 @@ head(gene_sd_tissue)
 ```
 
 ```{r}
-gene_sd_tissue |>
+gene_sd_histogram <- gene_sd_tissue |>
   ggplot(aes(x = SD)) +
   geom_histogram(
     bins = 40,
@@ -143,6 +149,11 @@ gene_sd_tissue |>
     x = "Standard deviation",
     y = "Number of gene-tissue combinations"
   )
+ggsave(here("results/04_gene_sd_histogram.png"),
+       plot = gene_sd_histogram,
+       width = 8,
+       height = 6,
+       dpi = 300)
 ```
 
 we see here that the standard deviation is right-skewed - this shows that the SD of the gene expression in different tissues is little, however there is still some gene expression in some tissues where the SD values are almost 1.5
