@@ -134,12 +134,34 @@ tidy_CN_array_combined <- rep_removed_avr_probe_batchCN_array_combined |>
               values_from = Value_Corrected)
 ```
 
+## Missing values
+
+Lets check the raw file for missing values.
+
 ```{r}
-tidy_CN_array_combined |> 
-  slice_head(n = 10)
+batchCN_array_combined |> 
+  summarise(
+    Total = n(),
+    Missing = sum(is.na(batchCN_array_combined)),
+    Complete = sum(!is.na(batchCN_array_combined))
+  )
 ```
 
-Now the data is much more tidy.
+There is a single cell with NA. The question is if it is an expression, a sample or gene that is missing.
+
+When working with out data we found that a single gene was unnamed. This means that the single cell that was missing was a gene symbol.
+
+```{r}
+tidy_CN_array_combined |> 
+  select("NA")
+```
+
+We chose to remove this gene from our data.
+
+```{r}
+tidy_CN_array_combined <- tidy_CN_array_combined |> 
+  select(-"NA")
+```
 
 ## Save the cleaned data
 
