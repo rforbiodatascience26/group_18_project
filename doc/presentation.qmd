@@ -15,18 +15,18 @@ editor: visual
 
 **Background**:
 
--   Endometriosis is a chronic, inflammatory, estrogen-driven disease where lesions (endometrium-like tissue) grow outside of the uterus.
--   The cause of endometriosis is unknown - that's why we choose to investigate the gene expression profiles of disease tissue and compare it to healthy tissue.
+- Endometriosis is a chronic, inflammatory, estrogen-driven disease where lesions (endometrium-like tissue) grow outside of the uterus.
+- The cause of endometriosis is unknown - that's why we choose to investigate the gene expression profiles of disease tissue and compare it to healthy tissue.
 
 **Aim**:
 
--   In our project we aimed to identify differences in gene expression profiles for endometrium, peritoneum and lesion tissue for endometriosis patients and compare them to healthy tissue gene profiles.
+- In our project we aimed to identify differences in gene expression profiles for endometrium, peritoneum and lesion tissue for endometriosis patients and compare them to healthy tissue gene profiles.
 
 ## Materials and Methods
 
 **Data:**
 
--   EndometDB: Database of log2 transformed mRNA expression of xx amount of genes and xx many samples of tissue and different lesion types in endometriosis patients, as well as xx samples of healthy control tissue.
+- EndometDB: Database of log2 transformed mRNA expression of xx amount of genes and xx many samples of tissue and different lesion types in endometriosis patients, as well as xx samples of healthy control tissue.
 
 \![\](results/04_tissue_dist.png)
 
@@ -34,32 +34,11 @@ editor: visual
 
 **Workflow**
 
--   Load --\> Clean --\> Augment --\> Describe --\> Analyse
+- Load --\> Clean --\> Augment --\> Describe --\> Analyse
 
-## Load (01_load.qmd)
+## Materials and Methods
 
-## Clean (02_clean.qmd)
-
-## Augment (03_augment.qmd)
-
-Added new variables describing each sample, based on the tissue code:
-
--   **Group:** Control or Patient
--   **Tissue:** Endometrium, Peritoneum or Lesion
--   **Lesion_type:** Peritoneal, Ovarian endometrioma or Deep infiltrating
--   **Lesion_subtype:** subtyping of the lesions, based on fx. the color of peritoneal lesions or the location of deep lesions
--   **Plot_group:** a descriptive label for each sample, used in the plots
-
-``` r
-data_aug <- data_tissue |>
-  mutate(Group = case_when(Tissue_type == "CE" ~ "Control",
-                           Tissue_type == "CP" ~ "Control",
-                           TRUE ~ "Patient"),
-         ...) |>
-  relocate(Sample, Tissue_type, Group, Tissue, Lesion_type, Lesion_subtype, Plot_group)
-```
-
-## Describe (04_describe.qmd)
+## Describe 
 
 Number of sample in each tissue type (col)
 
@@ -67,26 +46,30 @@ mean gene expression across different samples boxplot
 
 Standard deviation of gene expression within different tissue type (col)
 
-## Analysis 1 (05_analysis_1.qmd)
+## Analysis 1 - Plotting - 1/2
 
 **Relative expression = sample expression − mean of the controls**
 
--   Patients vs. controls (CE vs PE and CP vs PP)
--   Lesions vs. control endometrium
--   Top 10 genes for each comparison
--   Plots
-    -   Histogram
-    -   Barcharts
-    -   Boxplots, shown in grid plots with `facet_wrap()`, one panel per gene
+- Patients vs. controls (CE vs PE and CP vs PP)
+- Lesions vs. control endometrium
+- Top 10 genes for each comparison
+- Plots
+  - Histogram
+  - Barcharts
+  - Boxplots, shown in grid plots with `facet_wrap()`, one panel per gene
 
-## Analysis 2 (06_analysis_2.qmd)
+## Analysis 1 - Plotting -  2/2
 
-## Analysis 3 (07_analysis_3.qmd)
+## Analysis 2 - Statistical analysis
 
-## Results and discussion
+## Analysis 3 
+
+## Results and discussion - 1/2
+
+## Results and discussion - 2/2
 
 ```{=html}
-SS<style>
+<style>
 .reveal .slides { font-size: 28px; }
 </style>
 ```

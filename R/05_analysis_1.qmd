@@ -7,7 +7,7 @@ editor: visual
 ## Intention
 
 input file: 03_dat_aug.tsv\
-output files: results/05_rel_expr_all_genes_hist.png, results/05_rel_expr_bar.png, results/05_top10_endo_grid.png, results/05_top10_peri_grid.png, results/05_lesion_all_genes_hist.png, results/05_lesion_bar.png, results/05_top10_peritoneal_lesion_grid.png, results/05_top10_ovarian_lesion_grid.png, results/05_top10_deep_lesion_grid.png
+output files: results/05_rel_expr_all_genes_hist.png, results/05_rel_expr_all_genes_hist_back_transformed.png, results/05_rel_expr_bar.png, results/05_top10_endo_grid.png, results/05_top10_peri_grid.png, results/05_lesion_all_genes_hist.png, results/05_lesion_all_genes_hist_back_transformed.png, results/05_lesion_bar.png, results/05_top10_peritoneal_lesion_grid.png, results/05_top10_ovarian_lesion_grid.png, results/05_top10_deep_lesion_grid.png
 
 ## Loading the libraries and data
 
@@ -132,7 +132,7 @@ rel_expr_all_hist <- rel_expr_means |>
              fill = Tissue)) +
   geom_histogram(bins = 100,
                  alpha = 0.8) +
-  geom_vline(xintercept = 0,
+  geom_vline(xintercept = 1,
              linetype = "dashed") +
   facet_wrap(~ Tissue) +
   labs(title = "Distribution of relative expression across all genes",
@@ -144,7 +144,7 @@ rel_expr_all_hist <- rel_expr_means |>
 
 rel_expr_all_hist
 
-ggsave(here("results/05_rel_expr_all_genes_hist.png"),
+ggsave(here("results/05_rel_expr_all_genes_hist_back_transformed.png"),
        plot = rel_expr_all_hist,
        width = 12,
        height = 6,
@@ -324,7 +324,7 @@ lesion_all_hist <- lesion_means |>
              fill = Lesion_type)) +
   geom_histogram(bins = 100,
                  alpha = 0.8) +
-  geom_vline(xintercept = 0,
+  geom_vline(xintercept = 1,
              linetype = "dashed") +
   facet_wrap(~ Lesion_type) +
   labs(title = "Distribution of relative expression across all genes",
@@ -336,7 +336,7 @@ lesion_all_hist <- lesion_means |>
 
 lesion_all_hist
 
-ggsave(here("results/05_lesion_all_genes_hist.png"),
+ggsave(here("results/05_lesion_all_genes_hist_back_transformed.png"),
        plot = lesion_all_hist,
        width = 14,
        height = 5,
