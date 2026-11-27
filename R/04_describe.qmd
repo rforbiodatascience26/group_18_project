@@ -103,44 +103,6 @@ sample_stats |>
   )
 ```
 
-This is for one gene:
-
-```{r}
-ACTG2_stats <- data_long |>
-  filter(Gene == "ACTG2") |> 
-  group_by(Sample, Plot_group) |>
-   mutate(
-    Plot_group = factor(Plot_group,
-                        levels = c("Control endometrium", "Patient endometrium", "Control peritoneum", "Patient peritoneum","Ovarian endometrioma", "Deep infiltrating", "Peritoneal lesion"))
-  ) |> 
-  summarise(
-    Mean_expression = mean(Expression),
-    SD_expression = sd(Expression),
-    .groups = "drop"
-  )
-ACTG2_stats <- ACTG2_stats |>
-  ggplot(aes(x = Plot_group, y = Mean_expression)) +
-  geom_boxplot(fill = "red") +
-  geom_jitter(width = 0.15, alpha = 0.4) +
-  theme_classic() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  ) +
-  labs(
-    title = "ACTG2 gene expression across tissue types",
-    x = "Tissue type",
-    y = "Mean expression per sample"
-  )
-
-ggsave(here("results/04_ACTG2_stats.png"),
-       plot = tissue_dist,
-       width = 8,
-       height = 6,
-       dpi = 300)
-
-ACTG2_stats
-```
-
 Investigating how many NA values in the dataset.
 
 ```{r}
