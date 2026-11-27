@@ -21,11 +21,11 @@ Load the augmented data, arrange groups and make the data long (one row per samp
 ```{r}
 #read data and fix the order of the groups so plots don't sort them alphabetically
 data_aug <- read_tsv(here("data/03_dat_aug.tsv")) |>
-  mutate(Plot_group = factor(Plot_group,
-                             levels = c("Control endometrium", "Patient endometrium",
-                                        "Control peritoneum", "Patient peritoneum",
-                                        "Peritoneal lesion", "Ovarian endometrioma",
-                                        "Deep infiltrating")))
+  mutate(Plot_group = fct_relevel(Plot_group,
+                                  "Control endometrium", "Patient endometrium",
+                                  "Control peritoneum", "Patient peritoneum",
+                                  "Peritoneal lesion", "Ovarian endometrioma",
+                                  "Deep infiltrating"))
 
 #long format: one row per sample per gene
 data_long <- data_aug |>
@@ -33,8 +33,6 @@ data_long <- data_aug |>
                names_to = "Gene",
                values_to = "Expression")
 
-#make results folder
-dir.create(here("results"), showWarnings = FALSE)
 ```
 
 ```{r}
@@ -55,8 +53,8 @@ rel_expr <- data_long |>
   filter(Tissue != "Lesion") |>
   group_by(Gene) |>
   mutate(Rel_expr = case_when(
-    Tissue == "Endometrium" ~ Expression - mean(Expression[Tissue_type == "CE"], na.rm = TRUE),
-    Tissue == "Peritoneum"  ~ Expression - mean(Expression[Tissue_type == "CP"], na.rm = TRUE))) |>
+    Tissue == "Endometrium" ~ Expression - mean(if_else(Tissue_type == "CE", Expression, NA), na.rm = TRUE),
+    Tissue == "Peritoneum"  ~ Expression - mean(if_else(Tissue_type == "CP", Expression, NA), na.rm = TRUE))) |>
   ungroup()
 
 #mean change per gene in patients, for every gene
@@ -74,18 +72,18 @@ rel_expr_top10 <- rel_expr_means |>
   mutate(Gene = fct_reorder(Gene, Mean_rel_expr))
 
 #defining the top 10 genes, used for the plots
-top10_endo_genes <- rel_expr_top10 |> filter(Tissue == "Endometrium") |> pull(Gene) |> as.character()
-top10_peri_genes <- rel_expr_top10 |> filter(Tissue == "Peritoneum") |> pull(Gene) |> as.character()
+top10_endo_genes <- rel_expr_top10 |> filter(Tissue == "Endometrium") |> pull(Gene) 
+top10_peri_genes <- rel_expr_top10 |> filter(Tissue == "Peritoneum") |> pull(Gene) 
 
 #relative expression vs. CE and vs. CP for all samples, used in the boxplots
 rel_expr_ce <- data_long |>
   group_by(Gene) |>
-  mutate(Rel_expr = Expression - mean(Expression[Tissue_type == "CE"], na.rm = TRUE)) |>
+  mutate(Rel_expr = Expression - mean(if_else(Tissue_type == "CE", Expression, NA), na.rm = TRUE)) |>
   ungroup()
 
 rel_expr_cp <- data_long |>
   group_by(Gene) |>
-  mutate(Rel_expr = Expression - mean(Expression[Tissue_type == "CP"], na.rm = TRUE)) |>
+  mutate(Rel_expr = Expression - mean(if_else(Tissue_type == "CP", Expression, NA), na.rm = TRUE)) |>
   ungroup()
 
 top10_endo_genes
@@ -119,7 +117,8 @@ ggsave(here("results/05_rel_expr_all_genes_hist.png"),
        plot = rel_expr_all_hist,
        width = 12,
        height = 6,
-       dpi = 300)
+       dpi = 300,
+       create.dir = TRUE)
 ```
 
 ```{r}
@@ -275,9 +274,9 @@ lesion_top10 <- lesion_means |>
   mutate(Gene = fct_reorder(Gene, Mean_rel_expr))
 
 #defining the top 10 genes for each lesion type, used for the plots
-top10_peritoneal_genes <- lesion_top10 |> filter(Lesion_type == "Peritoneal lesion") |> pull(Gene) |> as.character()
-top10_ovarian_genes    <- lesion_top10 |> filter(Lesion_type == "Ovarian endometrioma") |> pull(Gene) |> as.character()
-top10_deep_genes       <- lesion_top10 |> filter(Lesion_type == "Deep infiltrating") |> pull(Gene) |> as.character()
+top10_peritoneal_genes <- lesion_top10 |> filter(Lesion_type == "Peritoneal lesion") |> pull(Gene) 
+top10_ovarian_genes    <- lesion_top10 |> filter(Lesion_type == "Ovarian endometrioma") |> pull(Gene) 
+top10_deep_genes       <- lesion_top10 |> filter(Lesion_type == "Deep infiltrating") |> pull(Gene)
 
 top10_peritoneal_genes
 top10_ovarian_genes
